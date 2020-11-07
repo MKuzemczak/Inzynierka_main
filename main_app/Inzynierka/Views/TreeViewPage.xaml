@@ -1,0 +1,130 @@
+﻿<Page
+    x:Class="Inzynierka.Views.TreeViewPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:winui="using:Microsoft.UI.Xaml.Controls"
+    xmlns:model="using:Inzynierka.Models"
+    xmlns:templateSelectors="using:Inzynierka.TemplateSelectors"
+    xmlns:mycontrols="using:Inzynierka.Controls"
+    xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
+    xmlns:views="using:Inzynierka.Views"
+    Style="{StaticResource PageStyle}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Key="DirectoryTemplate" x:DataType="model:FolderItem">
+            <winui:TreeViewItem
+                AutomationProperties.Name="{x:Bind Name}"
+                ItemsSource="{x:Bind Subfolders}" IsExpanded="False"
+                DoubleTapped="TreeViewItem_DoubleTapped"
+                RightTapped="TreeViewItem_RightTapped"
+                AllowDrop="True"
+                DragOver="TreeViewItem_DragOver"
+                Drop="TreeViewItem_Drop">
+                <winui:TreeViewItem.ContextFlyout>
+                    <MenuFlyout Opened="TreeViewItemMenuFlyout_Opened">
+                        <MenuFlyoutItem Text="Import images" Click="TreeViewItemMenuFlyout_ImportImages" >
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8B5;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutSeparator />
+                        <MenuFlyoutItem Text="Rename" Click="TreeViewItemMenuFlyout_Rename">
+                            <MenuFlyoutItem.Icon>
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8AC;"/>
+                            </MenuFlyoutItem.Icon>
+                        </MenuFlyoutItem>
+                        <MenuFlyoutItem Text="Delete" Icon="Delete" Click="TreeViewItemMenuFlyout_Delete" />
+                    </MenuFlyout>
+                </winui:TreeViewItem.ContextFlyout>
+                <mycontrols:EditableTextBlock
+                    TextBlockText="{x:Bind Name}"
+                    Margin="{StaticResource XXSmallTopRightBottomMargin}"
+                    TextChanged="TreeViewItemEditableTextBlock_TextChanged"
+                    Width="300">
+                </mycontrols:EditableTextBlock>
+            </winui:TreeViewItem>
+        </DataTemplate>
+        
+        <templateSelectors:DirectoryTemplateSelector
+            x:Key="TreeViewTemplateSelector"
+            DirectoryTemplate="{StaticResource DirectoryTemplate}" />
+
+    </Page.Resources>
+
+    <Grid
+        Background="{ThemeResource  SystemChromeMediumLowColor}"
+        Tapped="Grid_Tapped">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="40" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid
+            x:Name="header">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                x:Uid="TreeViewTitle"
+                Margin="{StaticResource SmallLeftMargin}"
+                Style="{StaticResource ListTitleStyle}"
+                VerticalAlignment="Center" />
+            <TextBlock x:Name="loadingTextBlock"
+                       Text="Loading..."
+                       Visibility="Collapsed"
+                       Grid.Column="1"
+                       VerticalAlignment="Center"/>
+            <Button
+                Grid.Column="2"
+                x:Uid="TreeView_CreateFolderButton"
+                Content="&#xE8F4;"
+                FontSize="14"
+                Padding="{StaticResource SmallLeftRightMargin}"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Center"
+                FontFamily="Segoe MDL2 Assets"
+                Background="Transparent"
+                Click="CreateFolderButton_Click" 
+                ToolTipService.ToolTip="Create folder"/>
+            <Button
+                Grid.Column="3"
+                x:Uid="TreeView_ImportImagesButton"
+                Content="&#xE8B5;"
+                FontSize="14"
+                Padding="{StaticResource SmallLeftRightMargin}"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Center"
+                FontFamily="Segoe MDL2 Assets"
+                Background="Transparent"
+                Click="ImportImagesButton_Click"
+                ToolTipService.ToolTip="Import images" />
+            <Button
+                Grid.Column="4"
+                x:Uid="TreeView_CollapseAllButton"
+                Content="&#xF165;"
+                FontSize="14"
+                Padding="{StaticResource SmallLeftRightMargin}"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Center"
+                FontFamily="Segoe MDL2 Assets"
+                Background="Transparent"
+                Click="CollapseAllButton_Click" 
+                ToolTipService.ToolTip="Collapse all"/>
+        </Grid>
+        <winui:TreeView
+            x:Name="treeView"
+            Grid.Row="1"
+            SelectionMode="Single"
+            ItemsSource="{x:Bind Directories}"
+            ItemInvoked="TreeViewItem_Invoked"
+            ItemTemplateSelector="{StaticResource TreeViewTemplateSelector}"
+            DragOver="TreeView_DragOver"/>
+    </Grid>
+
+</Page>
