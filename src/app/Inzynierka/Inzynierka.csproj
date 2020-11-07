@@ -116,9 +116,6 @@
     <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Alturos.Yolo">
-      <Version>2.6.4</Version>
-    </PackageReference>
     <PackageReference Include="Microsoft.Data.Sqlite">
       <Version>3.1.3</Version>
     </PackageReference>
