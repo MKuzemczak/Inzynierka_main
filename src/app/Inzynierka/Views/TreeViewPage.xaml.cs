@@ -253,6 +253,13 @@ namespace Inzynierka.Views
         private void CollapseAllButton_Click(object sender, RoutedEventArgs e)
             => CollapseNodes(treeView.RootNodes);
 
+        private async void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            var folderItem = await FolderManagerService.OpenFolderAsync();
+            var newNode = new WinUI.TreeViewNode() { Content = folderItem };
+            treeView.RootNodes.Add(newNode);
+        }
+
         private async void CreateFolderButton_Click(object sender, RoutedEventArgs e)
         {
             await CreateFolderWithSelectedAsParentAsync("New album");

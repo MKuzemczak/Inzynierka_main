@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,20 +10,37 @@ using Windows.Storage;
 using Inzynierka.DatabaseAccess;
 using System.Threading;
 using System.IO;
+using Windows.Storage.Search;
 
 namespace Inzynierka.Models
 {
     public class FolderItem
     {
+        public static List<FolderItem> FolderItems { get; } = new List<FolderItem>();
+
         public const string NameInvalidCharacters = "\\/:*?\"<>|";
 
         public int DatabaseId;
 
-        public List<FolderItem> Subfolders { get; protected set; } = new List<FolderItem>();
+        private List<FolderItem> _subfolders = new List<FolderItem>();
+        public List<FolderItem> Subfolders
+        {
+            get
+            {
+                return _subfolders;
+            }
+            protected set
+            {
+                _subfolders = value;
+            }
+        }
 
         public FolderItem ParentFolder { get; protected set; }
 
-        public string Name { get; set; }
+        public string Name { get { return Folder.Name; } }
+        public string Path { get { return Folder.Path; } }
+
+        public StorageFolder Folder { get; protected set; }
 
         public List<string> TagsToFilter { get; protected set; } = new List<string>();
 
@@ -31,24 +49,66 @@ namespace Inzynierka.Models
         private List<ImageItem> AllImages { get; set; } = new List<ImageItem>();
         private List<ImageItem> FilteredImages { get; set; } = new List<ImageItem>();
 
-        public static async Task<FolderItem> FromDatabaseVirtualFolder(DatabaseVirtualFolder virtualFolder)
+        public StorageFileQueryResult ImageQuery { get; set; }
+
+
+        protected static async Task<FolderItem> getNew(StorageFolder storageFolder)
         {
+            var virtualFolder = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(storageFolder.Path);
+
             FolderItem result = new FolderItem
             {
-                Name = virtualFolder.Name,
-                DatabaseId = virtualFolder.Id
+                DatabaseId = virtualFolder.Id,
+                Folder = storageFolder
             };
-            result.Subfolders = await result.GetSubfoldersAsync();
+
+            List<string> fileTypeFilter = new List<string>();
+            fileTypeFilter.Add(".jpg");
+            fileTypeFilter.Add(".png");
+            fileTypeFilter.Add(".gif");
+            fileTypeFilter.Add(".bmp");
+            var options = new QueryOptions(CommonFileQuery.OrderByName, fileTypeFilter)
+            {
+                FolderDepth = FolderDepth.Shallow
+            };
+
+            result.ImageQuery = result.Folder.CreateFileQueryWithOptions(options);
+            result.ImageQuery.ContentsChanged += result.HandleQueryContentsChanged;
+
+            await result.UpdateSubfoldersAsync();
             await result.UpdateQueryAsync();
+
+            FolderItems.Add(result);
 
             return result;
         }
 
-        public static async Task<FolderItem> GetNew(string name)
+        protected static FolderItem findExistingInstance(string path)
         {
-            var dbvf = await DatabaseAccessService.InsertVirtualFolderAsync(name);
+            foreach (var folder in FolderItems)
+            {
+                var path1 = System.IO.Path.GetFullPath(path);
+                var path2 = System.IO.Path.GetFullPath(folder.Path);
 
-            return await FromDatabaseVirtualFolder(dbvf);
+                if (string.Equals(path1, path2))
+                {
+                    return folder;
+                }
+            }
+
+            return null;
+        }
+
+        public static async Task<FolderItem> GetInstanceFromStorageFolder(StorageFolder storageFolder)
+        {
+            var result = findExistingInstance(storageFolder.Path);
+
+            if (result != null)
+            {
+                return result;
+            }
+
+            return await getNew(storageFolder);
         }
 
         public async Task<IReadOnlyList<StorageFile>> GetStorageFilesRangeAsync(int firstIndex, int length)
@@ -84,20 +144,16 @@ namespace Inzynierka.Models
             return FilteredImages.Count;
         }
 
-        protected async Task<List<FolderItem>> GetSubfoldersAsync()
+        protected async Task UpdateSubfoldersAsync()
         {
-            var virtualFolders = await DatabaseAccessService.GetChildrenOfFolderAsync(DatabaseId);
+            var storageFolders = await Folder.GetFoldersAsync();
 
-            var result = new List<FolderItem>();
+            Subfolders.Clear();
 
-            foreach (var item in virtualFolders)
+            foreach (var item in storageFolders)
             {
-                var newFolder = await FromDatabaseVirtualFolder(item);
-                newFolder.ParentFolder = this;
-                result.Add(newFolder);
+                Subfolders.Add(await GetInstanceFromStorageFolder(item));
             }
-
-            return result;
         }
 
         public async Task RenameAsync(string newName)
@@ -107,7 +163,7 @@ namespace Inzynierka.Models
                 throw new FormatException();
             }
             await DatabaseAccessService.RenameVirtualFolderAsync(DatabaseId, newName);
-            Name = newName;
+            await Folder.RenameAsync(newName);
         }
 
         public async Task SetParentAsync(FolderItem folder)
@@ -136,7 +192,7 @@ namespace Inzynierka.Models
             DatabaseId = -1;
             ParentFolder = null;
             Subfolders = null;
-            Name = null;
+            Folder = null;
         }
 
         public async Task UpdateQueryAsync()
@@ -278,6 +334,11 @@ namespace Inzynierka.Models
         public List<ImageItem> GetGroupOfImageItems(int groupId)
         {
             return AllImages.Where(i => (i.Group is object && i.Group.Id == groupId)).ToList();
+        }
+
+        protected async void HandleQueryContentsChanged(IStorageQueryResultBase sender, object args)
+        {
+            await UpdateSubfoldersAsync();
         }
 
         public static bool operator ==(FolderItem f1, FolderItem f2)

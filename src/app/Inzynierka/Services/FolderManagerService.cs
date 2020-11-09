@@ -27,7 +27,8 @@ namespace Inzynierka.Services
         private static Dictionary<int, FolderItem> FolderPickFolder = new Dictionary<int, FolderItem>();
         private static Dictionary<int, StateMessage> FolderPickStateMessage = new Dictionary<int, StateMessage>();
 
-        public static async Task<FolderItem> OpenFolderAsync()
+
+        private static async Task<StorageFolder> PickFolder()
         {
             var folderPicker = new FolderPicker
             {
@@ -35,20 +36,24 @@ namespace Inzynierka.Services
             };
 
             folderPicker.FileTypeFilter.Add("*");
-            StorageFolder folder = await folderPicker.PickSingleFolderAsync();
-            if (folder is object)
-            {
-                var dbvf = await AddToDatabase(folder);
-                string token = StorageApplicationPermissions.FutureAccessList.Add(folder);
-                return await FolderItem.FromDatabaseVirtualFolder(dbvf);
-            }
+            return await folderPicker.PickSingleFolderAsync();
+        }
 
-            return null;
+        public static async Task<FolderItem> OpenFolderAsync()
+        {
+            var folder = await PickFolder();
+
+            if (folder is null)
+                return null;
+
+            StorageApplicationPermissions.FutureAccessList.Add(folder);
+            return await FolderItem.GetInstanceFromStorageFolder(folder);
+            // TODO: Scan images in folder here
         }
 
         private static async Task<DatabaseVirtualFolder> AddToDatabase(StorageFolder folder, int parentId = -1)
         {
-            var dbvf = await DatabaseAccessService.InsertVirtualFolderAsync(folder.Name, parentId);
+            var dbvf = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(folder.Path, parentId);
             var subs = await folder.GetFoldersAsync();
 
             foreach(var item in subs)
@@ -106,17 +111,17 @@ namespace Inzynierka.Services
                 CurrentlyScannedFolder = folder;
 
                 var pickTaskIds = new List<int>();
-                try
-                {
-                    int compareTaskId = BackendConctroller.CompareImages(
-                        imageItems,
-                        FindSimilarFinishedHandler);
-                    pickTaskIds.Add(compareTaskId);
-                }
-                catch (Exception e)
-                {
+                //try
+                //{
+                //    int compareTaskId = BackendConctroller.CompareImages(
+                //        imageItems,
+                //        FindSimilarFinishedHandler);
+                //    pickTaskIds.Add(compareTaskId);
+                //}
+                //catch (Exception e)
+                //{
 
-                }
+                //}
 
                 // TODO: uncomment when backend provides quality check
                 //int qualityTaskId = BackendConctroller.CheckImagesQuality(
@@ -131,64 +136,64 @@ namespace Inzynierka.Services
             FolderPickCntr++;
         }
 
-        private static async void FindSimilarFinishedHandler(ControllerTaskResultMessage result)
-        {
-            if (result.result != BackendConctroller.DoneMessage)
-                return;
+        //private static async void FindSimilarFinishedHandler(ControllerTaskResultMessage result)
+        //{
+        //    if (result.result != BackendConctroller.DoneMessage)
+        //        return;
 
-            if (!FolderPickTasks.Any(i => i.Value.Contains(result.taskid)))
-                return;
+        //    if (!FolderPickTasks.Any(i => i.Value.Contains(result.taskid)))
+        //        return;
 
-            int folderPick = -1;
-            foreach (var item in FolderPickTasks)
-            {
-                if (item.Value.Remove(result.taskid))
-                {
-                    folderPick = item.Key;
-                    break;
-                }
-            }
+        //    int folderPick = -1;
+        //    foreach (var item in FolderPickTasks)
+        //    {
+        //        if (item.Value.Remove(result.taskid))
+        //        {
+        //            folderPick = item.Key;
+        //            break;
+        //        }
+        //    }
 
-            foreach (var group in result.images)
-            {
-                await FolderPickFolder[folderPick].GroupImagesAsync(group);
-            }
+        //    foreach (var group in result.images)
+        //    {
+        //        await FolderPickFolder[folderPick].GroupImagesAsync(group);
+        //    }
 
-            await CheckAllTasksInFolderPickDone(folderPick);
-        }
+        //    await CheckAllTasksInFolderPickDone(folderPick);
+        //}
 
-        private static async void CheckQualityFinishedHandler(ControllerTaskResultMessage result)
-        {
-            if (result.result != BackendConctroller.DoneMessage)
-                return;
+        //private static async void CheckQualityFinishedHandler(ControllerTaskResultMessage result)
+        //{
+        //    if (result.result != BackendConctroller.DoneMessage)
+        //        return;
 
-            if (!FolderPickTasks.Any(i => i.Value.Contains(result.taskid)))
-                return;
+        //    if (!FolderPickTasks.Any(i => i.Value.Contains(result.taskid)))
+        //        return;
 
-            int folderPick = -1;
-            foreach (var item in FolderPickTasks)
-            {
-                if (item.Value.Remove(result.taskid))
-                {
-                    folderPick = item.Key;
-                    break;
-                }
-            }
+        //    int folderPick = -1;
+        //    foreach (var item in FolderPickTasks)
+        //    {
+        //        if (item.Value.Remove(result.taskid))
+        //        {
+        //            folderPick = item.Key;
+        //            break;
+        //        }
+        //    }
 
-            foreach (var item in result.images)
-            {
-                foreach (var image in FolderPickImages[folderPick])
-                {
-                    if (item[0] == image.DatabaseId)
-                    {
-                        image.Quality = item[1];
-                        break;
-                    }
-                }
-            }
+        //    foreach (var item in result.images)
+        //    {
+        //        foreach (var image in FolderPickImages[folderPick])
+        //        {
+        //            if (item[0] == image.DatabaseId)
+        //            {
+        //                image.Quality = item[1];
+        //                break;
+        //            }
+        //        }
+        //    }
 
-            await CheckAllTasksInFolderPickDone(folderPick);
-        }
+        //    await CheckAllTasksInFolderPickDone(folderPick);
+        //}
 
         private static async Task CheckAllTasksInFolderPickDone(int folderPick)
         {

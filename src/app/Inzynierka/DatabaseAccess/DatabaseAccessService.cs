@@ -35,7 +35,7 @@ namespace Inzynierka.DatabaseAccess
             { await command.ExecuteReaderAsync(); }
 
             using (SqliteCommand command = new SqliteCommand("CREATE TABLE IF NOT EXISTS VIRTUALFOLDER" +
-                        "(Id INTEGER PRIMARY KEY NOT NULL, name text NOT NULL)", Database))
+                        "(Id INTEGER PRIMARY KEY NOT NULL, path text NOT NULL)", Database))
             { await command.ExecuteReaderAsync(); }
 
             using (SqliteCommand command = new SqliteCommand("CREATE TABLE IF NOT EXISTS VIRTUALFOLDER_IMAGE" +
@@ -140,7 +140,7 @@ namespace Inzynierka.DatabaseAccess
                 DatabaseVirtualFolder folder = new DatabaseVirtualFolder()
                 {
                     Id = query.GetInt32(0),
-                    Name = query.GetString(1)
+                    Path = query.GetString(1)
                 };
                     
                 result.Add(folder);
@@ -164,7 +164,7 @@ namespace Inzynierka.DatabaseAccess
                 DatabaseVirtualFolder folder = new DatabaseVirtualFolder()
                 {
                     Id = query.GetInt32(0),
-                    Name = query.GetString(1)
+                    Path = query.GetString(1)
                 };
 
                 result.Add(folder);
@@ -201,7 +201,7 @@ namespace Inzynierka.DatabaseAccess
                 DatabaseVirtualFolder folder = new DatabaseVirtualFolder()
                 {
                     Id = query.GetInt32(0),
-                    Name = query.GetString(1)
+                    Path = query.GetString(1)
                 };
 
                 result = folder;
@@ -279,20 +279,33 @@ namespace Inzynierka.DatabaseAccess
             return await GetImagesCountInFolderAsync(folder.Id);
         }
 
-        public static async Task<DatabaseVirtualFolder> InsertVirtualFolderAsync(string name, int parentId = -1)
+        public static async Task<DatabaseVirtualFolder> InsertVirtualFolderIfNotExistsAsync(string path, int parentId = -1)
         {
             DatabaseVirtualFolder result = new DatabaseVirtualFolder()
             {
-                Name = name
+                Path = path
             };
-            using (SqliteCommand command = new SqliteCommand("INSERT INTO VIRTUALFOLDER (name) " +
-                        $"VALUES ('{name}')", Database))
+
+            int rowid = 0;
+
+            using (SqliteCommand command = new SqliteCommand($@"
+                SELECT Id FROM VIRTUALFOLDER WHERE path = '{path}'", Database))
+            {
+                var query = await command.ExecuteReaderAsync();
+                if (query.HasRows)
+                {
+                    result.Id = query.GetInt32(0);
+                    return result;
+                }
+            }
+
+            using (SqliteCommand command = new SqliteCommand("INSERT INTO VIRTUALFOLDER (path) " +
+                        $"VALUES ('{path}')", Database))
             { await command.ExecuteReaderAsync(); }
 
-            Int64 rowid = 0;
 
             using (SqliteCommand command = new SqliteCommand("SELECT last_insert_rowid()", Database))
-            { rowid = (Int64)await command.ExecuteScalarAsync(); }
+            { rowid = (int)await command.ExecuteScalarAsync(); }
 
             if (rowid == 0)
             {
@@ -305,7 +318,7 @@ namespace Inzynierka.DatabaseAccess
                 { await command.ExecuteReaderAsync(); }
             }
 
-            result.Id = (int)rowid;
+            result.Id = rowid;
 
             return result;
         }
@@ -313,7 +326,7 @@ namespace Inzynierka.DatabaseAccess
         public static async Task RenameVirtualFolderAsync(int id, string newName)
         {
             using (SqliteCommand command = new SqliteCommand("UPDATE VIRTUALFOLDER " +
-                        $"SET name = '{newName}' " +
+                        $"SET path = '{newName}' " +
                         $"WHERE Id = {id}", Database))
             { await command.ExecuteReaderAsync(); }
         }

@@ -8,6 +8,7 @@
     xmlns:model="using:Inzynierka.Models"
     xmlns:templateSelectors="using:Inzynierka.TemplateSelectors"
     xmlns:mycontrols="using:Inzynierka.Controls"
+    xmlns:storage="using:Windows.Storage"
     xmlns:controls="using:Microsoft.Toolkit.Uwp.UI.Controls"
     xmlns:views="using:Inzynierka.Views"
     Style="{StaticResource PageStyle}"
@@ -17,7 +18,8 @@
         <DataTemplate x:Key="DirectoryTemplate" x:DataType="model:FolderItem">
             <winui:TreeViewItem
                 AutomationProperties.Name="{x:Bind Name}"
-                ItemsSource="{x:Bind Subfolders}" IsExpanded="False"
+                ItemsSource="{x:Bind Subfolders}"
+                IsExpanded="False"
                 DoubleTapped="TreeViewItem_DoubleTapped"
                 RightTapped="TreeViewItem_RightTapped"
                 AllowDrop="True"
@@ -69,6 +71,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <TextBlock
                 x:Uid="TreeViewTitle"
@@ -82,6 +85,18 @@
                        VerticalAlignment="Center"/>
             <Button
                 Grid.Column="2"
+                x:Uid="TreeView_OpenFolderButton"
+                Content="&#xE838;"
+                FontSize="14"
+                Padding="{StaticResource SmallLeftRightMargin}"
+                VerticalAlignment="Stretch"
+                VerticalContentAlignment="Center"
+                FontFamily="Segoe MDL2 Assets"
+                Background="Transparent"
+                Click="OpenFolderButton_Click" 
+                ToolTipService.ToolTip="Open folder"/>
+            <Button
+                Grid.Column="3"
                 x:Uid="TreeView_CreateFolderButton"
                 Content="&#xE8F4;"
                 FontSize="14"
@@ -93,7 +108,7 @@
                 Click="CreateFolderButton_Click" 
                 ToolTipService.ToolTip="Create folder"/>
             <Button
-                Grid.Column="3"
+                Grid.Column="4"
                 x:Uid="TreeView_ImportImagesButton"
                 Content="&#xE8B5;"
                 FontSize="14"
@@ -105,7 +120,7 @@
                 Click="ImportImagesButton_Click"
                 ToolTipService.ToolTip="Import images" />
             <Button
-                Grid.Column="4"
+                Grid.Column="5"
                 x:Uid="TreeView_CollapseAllButton"
                 Content="&#xF165;"
                 FontSize="14"
