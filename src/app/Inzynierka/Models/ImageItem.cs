@@ -160,7 +160,7 @@ namespace Inzynierka.Models
         // Needed to ensure only one request is in progress at once
         private static SemaphoreSlim gettingFileProperties = new SemaphoreSlim(1);
 
-        public static async Task<ImageItem> FromDatabaseImage(
+        public static async Task<ImageItem> FromDatabaseImageAsync(
             DatabaseImage dbimage, CancellationToken ct = new CancellationToken(), Options viewMode = Options.Image)
         {
             ImageItem result = new ImageItem()

@@ -97,7 +97,7 @@ namespace Inzynierka.Views
             // giving the data source time to cancel its work
             await Task.Delay(500);
             if (cntrState == SetTagsToFilterRequestCntr)
-                await SelectedContentFolder?.SetTagsToFilter(tags);
+                await SelectedContentFolder?.FilterWithTags(tags);
         }
 
         private void Set<T>(ref T storage, T value, [CallerMemberName]string propertyName = null)
@@ -240,20 +240,20 @@ namespace Inzynierka.Views
 
         private async void ThumbnailGrid_Drop(object sender, DragEventArgs e)
         {
-            var targetGroup = ((sender as Grid).DataContext as ImageItem).Group;
+            //var targetGroup = ((sender as Grid).DataContext as ImageItem).Group;
 
-            if (targetGroup is null || targetGroup.Id < 0)
-                return;
+            //if (targetGroup is null || targetGroup.Id < 0)
+            //    return;
 
-            foreach (var item in DragAndDropHelper.DraggedItems)
-            {
-                await (item as ImageItem).AddToGroupAsync(targetGroup);
-            }
+            //foreach (var item in DragAndDropHelper.DraggedItems)
+            //{
+            //    await (item as ImageItem).AddToGroupAsync(targetGroup);
+            //}
 
-            if (DragAndDropHelper.DraggedItems.Count > 0)
-            {
-                SelectedContentFolder.ReorderImages();
-            }
+            //if (DragAndDropHelper.DraggedItems.Count > 0)
+            //{
+            //    SelectedContentFolder.ReorderImages();
+            //}
         }
 
         private void ImagesGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -264,13 +264,13 @@ namespace Inzynierka.Views
 
         #region RIGHT_CLICK_EVENT_HANDLERS
 
-        private async void AddToNewGroup_Click(object sender, RoutedEventArgs e)
-        {
-            var selectedItems = imagesGridView.SelectedItems.Select(i => i as ImageItem).ToList();
+        //private async void AddToNewGroup_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var selectedItems = imagesGridView.SelectedItems.Select(i => i as ImageItem).ToList();
 
-            await SelectedContentFolder.GroupImagesAsync(selectedItems);
-            SelectedContentFolder.ReorderImages();
-        }
+        //    await SelectedContentFolder.GroupImagesAsync(selectedItems);
+        //    SelectedContentFolder.ReorderImages();
+        //}
 
         private void SelectGroup_Click(object sender, RoutedEventArgs e)
         {
@@ -286,39 +286,39 @@ namespace Inzynierka.Views
             }
         }
 
-        private async void MergeGroups_Click(object sender, RoutedEventArgs e)
-        {
-            var selectedItems = imagesGridView.SelectedItems;
-            var allItems = SelectedContentFolder.GetRawImageItems();
+        //private async void MergeGroups_Click(object sender, RoutedEventArgs e)
+        //{
+        //    var selectedItems = imagesGridView.SelectedItems;
+        //    var allItems = SelectedContentFolder.GetRawImageItems();
 
-            if (selectedItems.Count < 2)
-                return;
+        //    if (selectedItems.Count < 2)
+        //        return;
 
-            var baseGroup = (selectedItems[0] as ImageItem).Group;
-            var prevGroup = baseGroup;
-            var selectedGroups = new List<DatabaseSimilaritygroup>();
-            foreach (ImageItem item in selectedItems)
-            {
-                if (item.Group != prevGroup)
-                {
-                    prevGroup = item.Group;
-                    selectedGroups.Add(prevGroup);
-                }
-            }
+        //    var baseGroup = (selectedItems[0] as ImageItem).Group;
+        //    var prevGroup = baseGroup;
+        //    var selectedGroups = new List<DatabaseSimilaritygroup>();
+        //    foreach (ImageItem item in selectedItems)
+        //    {
+        //        if (item.Group != prevGroup)
+        //        {
+        //            prevGroup = item.Group;
+        //            selectedGroups.Add(prevGroup);
+        //        }
+        //    }
 
-            bool reorder = false;
-            foreach (var item in allItems)
-            {
-                if (selectedGroups.Contains(item.Group))
-                {
-                    await item.AddToGroupAsync(baseGroup);
-                    reorder = true;
-                }
-            }
+        //    bool reorder = false;
+        //    foreach (var item in allItems)
+        //    {
+        //        if (selectedGroups.Contains(item.Group))
+        //        {
+        //            await item.AddToGroupAsync(baseGroup);
+        //            reorder = true;
+        //        }
+        //    }
 
-            if (reorder)
-                SelectedContentFolder.ReorderImages();
-        }
+        //    if (reorder)
+        //        SelectedContentFolder.ReorderImages();
+        //}
 
         private async void CopyImage_Click(object sender, RoutedEventArgs e)
         {

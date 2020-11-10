@@ -354,7 +354,7 @@ namespace Inzynierka.DatabaseAccess
             { await command.ExecuteReaderAsync(); }
         }
 
-        public static async Task<int> InsertImageAsync(string path, bool scanned, int parentId)
+        public static async Task<DatabaseImage> InsertImageAsync(string path, bool scanned, int parentId)
         {
             if (parentId < 1)
                 throw new ArgumentException("Error: Parent ID smaller than 1 - doesn't exist.");
@@ -377,7 +377,7 @@ namespace Inzynierka.DatabaseAccess
                 $"VALUES ({rowid}, {parentId})", Database))
             { await command.ExecuteReaderAsync(); }
 
-            return (int)rowid;
+            return new DatabaseImage() { Id = (int)rowid, Path = path, Scanned = scanned };
         }
 
         public static async Task SetImageScanned(int imageId, bool scanned)

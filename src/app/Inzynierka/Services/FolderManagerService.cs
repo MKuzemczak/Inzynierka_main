@@ -86,7 +86,7 @@ namespace Inzynierka.Services
 
             foreach (var item in virtualFoldersRootNodes)
             {
-                result.Add(await FolderItem.FromDatabaseVirtualFolder(item));
+                result.Add(await FolderItem.GetInstanceFromDatabaseVirtualFolder(item));
             }
 
             return result;

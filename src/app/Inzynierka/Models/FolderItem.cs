@@ -16,7 +16,7 @@ namespace Inzynierka.Models
 {
     public class FolderItem
     {
-        public static List<FolderItem> FolderItems { get; } = new List<FolderItem>();
+        public static Dictionary<string, FolderItem> FolderItems { get; } = new Dictionary<string, FolderItem>();
 
         public const string NameInvalidCharacters = "\\/:*?\"<>|";
 
@@ -42,26 +42,71 @@ namespace Inzynierka.Models
 
         public StorageFolder Folder { get; protected set; }
 
-        public List<string> TagsToFilter { get; protected set; } = new List<string>();
-
         public event EventHandler ContentsChanged;
 
-        private List<ImageItem> AllImages { get; set; } = new List<ImageItem>();
-        private List<ImageItem> FilteredImages { get; set; } = new List<ImageItem>();
+        private Dictionary<int, ImageItem> _allImagesById = new Dictionary<int, ImageItem>();
+        protected Dictionary<int, ImageItem> AllImagesById
+        {
+            get { return _allImagesById; }
+            set
+            {
+                _allImagesById = value;
+                AllImagesByPath = _allImagesById.ToDictionary(i => i.Value.FilePath, i => i.Value);
+            }
+        }
+
+        protected IReadOnlyDictionary<string, ImageItem> AllImagesByPath { get; set; } = new Dictionary<string, ImageItem>();
 
         public StorageFileQueryResult ImageQuery { get; set; }
 
-
-        protected static async Task<FolderItem> getNew(StorageFolder storageFolder)
+        protected static async Task<FolderItem> GetNew(StorageFolder storageFolder, DatabaseVirtualFolder virtualFolder)
         {
-            var virtualFolder = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(storageFolder.Path);
-
             FolderItem result = new FolderItem
             {
                 DatabaseId = virtualFolder.Id,
                 Folder = storageFolder
             };
 
+            result.InitializeImageQuery();
+
+            await result.UpdateSubfoldersAsync();
+            await result.UpdateQueryAsync();
+
+            FolderItems.Add(result.Path, result);
+
+            return result;
+        }
+
+        public static async Task<FolderItem> GetInstanceFromStorageFolder(StorageFolder storageFolder)
+        {
+            FolderItem result = null;
+
+            if (FolderItems.TryGetValue(storageFolder.Path, out result))
+            {
+                return result;
+            }
+
+            var virtualFolder = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(storageFolder.Path);
+
+            return await GetNew(storageFolder, virtualFolder);
+        }
+
+        public static async Task<FolderItem> GetInstanceFromDatabaseVirtualFolder(DatabaseVirtualFolder virtualFolder)
+        {
+            FolderItem result = null;
+
+            if (FolderItems.TryGetValue(virtualFolder.Path, out result))
+            {
+                return result;
+            }
+
+            var storageFolder = await StorageFolder.GetFolderFromPathAsync(virtualFolder.Path);
+
+            return await GetNew(storageFolder, virtualFolder);
+        }
+
+        protected void InitializeImageQuery()
+        {
             List<string> fileTypeFilter = new List<string>();
             fileTypeFilter.Add(".jpg");
             fileTypeFilter.Add(".png");
@@ -72,76 +117,16 @@ namespace Inzynierka.Models
                 FolderDepth = FolderDepth.Shallow
             };
 
-            result.ImageQuery = result.Folder.CreateFileQueryWithOptions(options);
-            result.ImageQuery.ContentsChanged += result.HandleQueryContentsChanged;
-
-            await result.UpdateSubfoldersAsync();
-            await result.UpdateQueryAsync();
-
-            FolderItems.Add(result);
-
-            return result;
+            ImageQuery = Folder.CreateFileQueryWithOptions(options);
+            ImageQuery.ContentsChanged += HandleQueryContentsChanged;
         }
 
-        protected static FolderItem findExistingInstance(string path)
-        {
-            foreach (var folder in FolderItems)
-            {
-                var path1 = System.IO.Path.GetFullPath(path);
-                var path2 = System.IO.Path.GetFullPath(folder.Path);
-
-                if (string.Equals(path1, path2))
-                {
-                    return folder;
-                }
-            }
-
-            return null;
-        }
-
-        public static async Task<FolderItem> GetInstanceFromStorageFolder(StorageFolder storageFolder)
-        {
-            var result = findExistingInstance(storageFolder.Path);
-
-            if (result != null)
-            {
-                return result;
-            }
-
-            return await getNew(storageFolder);
-        }
-
-        public async Task<IReadOnlyList<StorageFile>> GetStorageFilesRangeAsync(int firstIndex, int length)
-        {
-            var result = new List<StorageFile>();
-
-            var range = FilteredImages.GetRange(firstIndex, length);
-
-            foreach (var item in range)
-            {
-                try
-                {
-                    result.Add(await StorageFile.GetFileFromPathAsync(item.FilePath));
-                }
-                catch (FileNotFoundException)
-                {
-                    continue;
-                }
-            }
-
-            return result;
-        }
 
         public List<ImageItem> GetRawImageItems()
         {
             var result = new List<ImageItem>();
-            result.AddRange(FilteredImages);
+            result.AddRange(AllImagesById.Values);
             return result;
-        }
-
-        public int GetFilesCount()
-        {
-            return FilteredImages.Count;
         }
 
         protected async Task UpdateSubfoldersAsync()
@@ -195,90 +180,55 @@ namespace Inzynierka.Models
             Folder = null;
         }
 
-        public async Task UpdateQueryAsync()
+        public async Task ReloadImagesAsync()
         {
+            var queriedImages = await ImageQuery.GetFilesAsync();
             var raw = await DatabaseAccessService.GetVirtualfolderImagesWithGroupsAndTags(DatabaseId);
-            var currentIds = AllImages.Select(i => i.DatabaseId).ToList();
-            var rawCount = raw.Count;
-            for (int i = rawCount - 1; i >= 0; i--)
+            var rawPathDict = raw.ToDictionary(i => i.Path, i => i);
+            var queriedImagesCount = queriedImages.Count;
+
+            // finding images not in database and images in database that don't exist
+            for (int i = queriedImagesCount - 1; i >= 0; i--)
             {
-                for (int j = currentIds.Count - 1; j >= 0; j--)
+                DatabaseImage img = null;
+                var path = queriedImages[i].Path;
+                if (rawPathDict.TryGetValue(path, out img))
                 {
-                    if (raw[i].Id == currentIds[j])
-                    {
-                        raw.RemoveAt(i);
-                        currentIds.RemoveAt(j);
-                        break;
-                    }
+                    rawPathDict.Remove(path);
+                }
+                else
+                {
+                    // adding image to database and to raw
+                    var databaseImage = await DatabaseAccessService.InsertImageAsync(queriedImages[i].Path, false, DatabaseId);
+                    raw.Add(databaseImage);
                 }
             }
 
-            AllImages.RemoveAll(i => currentIds.Contains(i.DatabaseId));
-
-            foreach (var item in raw)
+            // deleting non-existent images from database and from raw
+            foreach (var image in rawPathDict.Values)
             {
-                AllImages.Add(await ImageItem.FromDatabaseImage(item, viewMode: ImageItem.Options.None));
+                await DatabaseAccessService.DeleteImageAsync(image.Id);
+                raw.Remove(image);
             }
 
-            ReorderImages();
-        }
-
-        public void ReorderImages()
-        {
-            var tmp = AllImages.OrderByDescending(i => i.Group.Id).ToList();
-            AllImages = tmp;
-            FilteredImages.Clear();
-
-            if (TagsToFilter is null || TagsToFilter.Count == 0)
+            // Removing non-existing ImageItems, preserving existing and adding new
+            var newAllImagesById = new Dictionary<int, ImageItem>();
+            foreach (var rawImage in raw)
             {
-                FilteredImages.AddRange(AllImages);
-            }
-            else
-            {
-                FilteredImages = AllImages.
-                Where(i => TagsToFilter.Intersect(i.Tags).Count() == TagsToFilter.Count).ToList();
-            }
+                ImageItem item = null;
 
-            int prevGroupId = -1;
-            int nextGroupId = -1;
-            for (int i = 0; i < FilteredImages.Count; i++)
-            {
-                if (FilteredImages[i].Group is null ||
-                    FilteredImages[i].Group.Id < 0)
+                if (AllImagesById.TryGetValue(rawImage.Id, out item))
                 {
-                    FilteredImages[i].PositionInGroup = Helpers.GroupPosition.None;
-                    prevGroupId = -1;
-                    continue;
+                    newAllImagesById.Add(item.DatabaseId, item);
                 }
-
-                int currentGroupId = FilteredImages[i].Group.Id;
-
-                if (i + 1 == FilteredImages.Count)
-                    nextGroupId = -1;
                 else
-                    nextGroupId = FilteredImages[i + 1].Group.Id;
-
-                if (prevGroupId != currentGroupId &&
-                    nextGroupId != currentGroupId)
-                    FilteredImages[i].PositionInGroup = Helpers.GroupPosition.Only;
-                else if (prevGroupId != currentGroupId)
-                    FilteredImages[i].PositionInGroup = Helpers.GroupPosition.Start;
-                else if (nextGroupId != currentGroupId)
-                    FilteredImages[i].PositionInGroup = Helpers.GroupPosition.End;
-                else
-                    FilteredImages[i].PositionInGroup = Helpers.GroupPosition.Middle;
-
-                prevGroupId = currentGroupId;
+                {
+                    newAllImagesById.Add(rawImage.Id, await ImageItem.FromDatabaseImageAsync(rawImage, viewMode: ImageItem.Options.None));
+                }
             }
-
-            ContentsChanged?.Invoke(this, new EventArgs());
+            AllImagesById = newAllImagesById;
         }
 
-        public async Task SetTagsToFilter(List<string> tags)
-        {
-            TagsToFilter = tags;
-            await UpdateQueryAsync();
-        }
 
         /// <summary>
         /// 
