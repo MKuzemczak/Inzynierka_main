@@ -171,6 +171,9 @@
     <Compile Include="DatabaseAccess\DatabaseImage.cs" />
     <Compile Include="DatabaseAccess\DatabaseSimilaritygroup.cs" />
     <Compile Include="DatabaseAccess\DatabaseVirtualFolder.cs" />
+    <Compile Include="Services\Exceptions\MainThreadDispatcherServiceNotInitialized.cs" />
+    <Compile Include="Services\MainThreadDispatcherService.cs" />
+    <Compile Include="Views\Exceptions\NoParentFolderSelectedExcpetion.cs" />
     <Compile Include="Helpers\DragAndDropHelper.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\EnumToBooleanConverter.cs" />
@@ -180,6 +183,7 @@
     <Compile Include="Models\ControllerTaskRequestMessage.cs" />
     <Compile Include="Models\ControllerTaskResultMessage.cs" />
     <Compile Include="Models\EditableTextBlockTextChangedEventArgs.cs" />
+    <Compile Include="Models\FolderItemFilteredImagesProvider.cs" />
     <Compile Include="Models\ImageDataSource.cs" />
     <Compile Include="Models\ImageItem.cs" />
     <Compile Include="Models\ItemCacheManager.cs" />
@@ -196,7 +200,6 @@
     <Compile Include="Services\BackendConctroller.cs" />
     <Compile Include="Services\Exceptions.cs" />
     <Compile Include="Services\FolderManagerService.cs" />
-    <Compile Include="Services\ImageLoaderService.cs" />
     <Compile Include="Services\NavigationService.cs" />
     <Compile Include="Services\RabbitMQCommunicationService.cs" />
     <Compile Include="Models\StateMessage.cs" />

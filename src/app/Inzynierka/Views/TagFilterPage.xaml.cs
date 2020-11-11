@@ -29,12 +29,13 @@ namespace Inzynierka.Views
         public event EventHandler<SelectedTagsChangedEventArgs> SelectedTagsChanged;
         public event EventHandler<DeleteTagClickedEventArgs> DeleteTagClicked;
 
-        private FolderItem AccessedFolder { get; set; }
+        private FolderItemFilteredImagesProvider FilteredImagesProvider { get; set; } = new FolderItemFilteredImagesProvider();
 
         public TagFilterPage()
         {
             this.InitializeComponent();
             PopulateFiltered(AllTags);
+            FilteredImagesProvider.ContentsChanged += AccessedFolderContentsChangedHandler;
         }
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -42,29 +43,31 @@ namespace Inzynierka.Views
             UpdateFiltered();
         }
 
-        public async Task AccessFolderAsync(FolderItem folder)
+        public void SetImagesProvider(FolderItemFilteredImagesProvider provider)
         {
-            if (folder is null)
+            if (provider is null)
+                throw new ArgumentNullException(nameof(provider));
+
+            if (FilteredImagesProvider != provider)
             {
-                throw new ArgumentNullException(nameof(folder));
+                if (FilteredImagesProvider is object)
+                {
+                    FilteredImagesProvider.ContentsChanged -= AccessedFolderContentsChangedHandler;
+                }
+
+                FilteredImagesProvider = provider;
+                FilteredImagesProvider.ContentsChanged += AccessedFolderContentsChangedHandler;
             }
-
-            if (AccessedFolder is object)
-                AccessedFolder.ContentsChanged -= AccessedFolderContentsChangedHandler;
-
-            AccessedFolder = folder;
-            AccessedFolder.ContentsChanged += AccessedFolderContentsChangedHandler;
-            await ScanAccessedFolderForTags();
         }
 
-        private async void AccessedFolderContentsChangedHandler(object sender, EventArgs e)
+        private void AccessedFolderContentsChangedHandler(object sender, EventArgs e)
         {
-            await ScanAccessedFolderForTags();
+            ScanAccessedFolderForTags();
         }
 
-        private async Task ScanAccessedFolderForTags()
+        public void ScanAccessedFolderForTags()
         {
-            AllTags = await AccessedFolder.GetTagsOfImagesAsync();
+            AllTags = FilteredImagesProvider.GetTagsOfImages();
             UpdateFiltered();
         }
 

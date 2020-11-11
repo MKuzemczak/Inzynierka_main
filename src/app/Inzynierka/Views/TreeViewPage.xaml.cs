@@ -161,24 +161,25 @@ namespace Inzynierka.Views
         {
             try
             {
-                var folderItem = await FolderItem.GetNew(name);
+                var selectedFolder = GetSelectedFolder();
+                if (selectedFolder is null)
+                    throw new Exceptions.NoParentFolderSelectedException("No parent folder selected, a new folder cannot be created.");
 
-                if (GetSelectedFolder() != null)
+                FolderItem folderItem = null;
+
+                try
                 {
-                    try
-                    {
-                        await folderItem.SetParentAsync(GetSelectedFolder());
-                    }
-                    catch (Exception exception)
-                    {
-                        var messageDialog = new MessageDialog("Error setting folder parent: " + exception.Message);
-                        messageDialog.Commands.Add(new UICommand("Close"));
-                        messageDialog.DefaultCommandIndex = 0;
-                        messageDialog.CancelCommandIndex = 0;
-                        await messageDialog.ShowAsync();
-                        await folderItem.DeleteAsync();
-                        return null;
-                    }
+                    folderItem = await selectedFolder.CreateSubfolderAsync(name);
+                }
+                catch (Exception exception)
+                {
+                    var messageDialog = new MessageDialog("Error setting folder parent: " + exception.Message);
+                    messageDialog.Commands.Add(new UICommand("Close"));
+                    messageDialog.DefaultCommandIndex = 0;
+                    messageDialog.CancelCommandIndex = 0;
+                    await messageDialog.ShowAsync();
+                    await folderItem.DeleteAsync();
+                    return null;
                 }
 
                 var newNode = new WinUI.TreeViewNode() { Content = folderItem };
@@ -267,13 +268,13 @@ namespace Inzynierka.Views
 
         private async void ImportImagesButton_Click(object sender, RoutedEventArgs e)
         {
-            FolderItem folder = null;
-            if (GetSelectedFolder() != null)
-                folder = GetSelectedFolder();
-            else
-                folder = await CreateFolderWithSelectedAsParentAsync("Imported images");
+            //FolderItem folder = null;
+            //if (GetSelectedFolder() != null)
+            //    folder = GetSelectedFolder();
+            //else
+            //    folder = await CreateFolderWithSelectedAsParentAsync("Imported images");
 
-            await FolderManagerService.PickAndImportImagesToFolder(folder);
+            //await FolderManagerService.PickAndImportImagesToFolder(folder);
         }
 
         #endregion
@@ -333,7 +334,7 @@ namespace Inzynierka.Views
 
         private async void TreeViewItemMenuFlyout_ImportImages(object sender, RoutedEventArgs e)
         {
-            await FolderManagerService.PickAndImportImagesToFolder(GetSelectedFolder());
+            //await FolderManagerService.PickAndImportImagesToFolder(GetSelectedFolder());
         }
 
         #endregion

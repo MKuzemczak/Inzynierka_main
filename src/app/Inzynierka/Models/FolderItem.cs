@@ -3,14 +3,15 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Windows.Storage;
+using Windows.Storage.Search;
+using Windows.UI.Core;
 
 using Inzynierka.DatabaseAccess;
-using System.Threading;
-using System.IO;
-using Windows.Storage.Search;
+using Inzynierka.Services;
 
 namespace Inzynierka.Models
 {
@@ -20,7 +21,7 @@ namespace Inzynierka.Models
 
         public const string NameInvalidCharacters = "\\/:*?\"<>|";
 
-        public int DatabaseId;
+        public int DatabaseId { get; set; } = -1;
 
         private List<FolderItem> _subfolders = new List<FolderItem>();
         public List<FolderItem> Subfolders
@@ -39,6 +40,8 @@ namespace Inzynierka.Models
 
         public string Name { get { return Folder.Name; } }
         public string Path { get { return Folder.Path; } }
+
+        public bool IsRoot { get; set; } = false;
 
         public StorageFolder Folder { get; protected set; }
 
@@ -59,25 +62,28 @@ namespace Inzynierka.Models
 
         public StorageFileQueryResult ImageQuery { get; set; }
 
-        protected static async Task<FolderItem> GetNew(StorageFolder storageFolder, DatabaseVirtualFolder virtualFolder)
+        protected static async Task<FolderItem> GetNew(StorageFolder storageFolder, DatabaseVirtualFolder virtualFolder = null)
         {
-            FolderItem result = new FolderItem
+            FolderItem result = new FolderItem();
+            result.Folder = storageFolder;
+
+            if (virtualFolder is object)
             {
-                DatabaseId = virtualFolder.Id,
-                Folder = storageFolder
-            };
+                result.DatabaseId = virtualFolder.Id;
+                result.IsRoot = virtualFolder.IsRoot;
+            }
 
             result.InitializeImageQuery();
 
             await result.UpdateSubfoldersAsync();
-            await result.UpdateQueryAsync();
+            await result.ReloadImagesAsync();
 
             FolderItems.Add(result.Path, result);
 
             return result;
         }
 
-        public static async Task<FolderItem> GetInstanceFromStorageFolder(StorageFolder storageFolder)
+        public static async Task<FolderItem> GetInstanceFromStorageFolder(StorageFolder storageFolder, bool isRoot = false)
         {
             FolderItem result = null;
 
@@ -86,7 +92,7 @@ namespace Inzynierka.Models
                 return result;
             }
 
-            var virtualFolder = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(storageFolder.Path);
+            var virtualFolder = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(storageFolder.Path, isRoot);
 
             return await GetNew(storageFolder, virtualFolder);
         }
@@ -180,7 +186,7 @@ namespace Inzynierka.Models
             Folder = null;
         }
 
-        public async Task ReloadImagesAsync()
+        public virtual async Task ReloadImagesAsync()
         {
             var queriedImages = await ImageQuery.GetFilesAsync();
             var raw = await DatabaseAccessService.GetVirtualfolderImagesWithGroupsAndTags(DatabaseId);
@@ -229,28 +235,10 @@ namespace Inzynierka.Models
             AllImagesById = newAllImagesById;
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="files"></param>
-        /// <returns>List of database IDs</returns>
-        public async Task<List<ImageItem>> AddFilesToFolder(IReadOnlyList<StorageFile> files)
+        public async Task<FolderItem> CreateSubfolderAsync(string name)
         {
-            var ids = new List<int>();
-            foreach (var file in files)
-            {
-                ids.Add(await DatabaseAccessService.InsertImageAsync(file.Path, false, DatabaseId));
-            }
-            await UpdateQueryAsync();
-            var result = AllImages.Where(i => ids.Contains(i.DatabaseId)).ToList();
-            ContentsChanged?.Invoke(this, new EventArgs());
-            return result;
-        }
-
-        public async Task<List<string>> GetTagsOfImagesAsync()
-        {
-            return await DatabaseAccessService.GetVirtualfolderTags(DatabaseId);
+            var storageFolder = await Folder.CreateFolderAsync(name);
+            return await GetInstanceFromStorageFolder(storageFolder);
         }
 
         public void InvokeContentsChanged()
@@ -258,37 +246,11 @@ namespace Inzynierka.Models
             ContentsChanged?.Invoke(this, new EventArgs());
         }
 
-        public async Task GroupImagesAsync(List<ImageItem> imageItems)
+        protected virtual async void HandleQueryContentsChanged(IStorageQueryResultBase sender, object args)
         {
-            var group = await DatabaseAccessService.InsertSimilarityGroup("noname");
-
-            foreach (var item in imageItems)
-            {
-                await item.AddToGroupAsync(group);
-            }
-        }
-
-        public async Task GroupImagesAsync(List<int> imageIds)
-        {
-            var group = await DatabaseAccessService.InsertSimilarityGroup("noname");
-
-            foreach (var item in AllImages)
-            {
-                if (imageIds.Remove(item.DatabaseId))
-                {
-                    await item.AddToGroupAsync(group);
-                }
-            }
-        }
-
-        public List<ImageItem> GetGroupOfImageItems(int groupId)
-        {
-            return AllImages.Where(i => (i.Group is object && i.Group.Id == groupId)).ToList();
-        }
-
-        protected async void HandleQueryContentsChanged(IStorageQueryResultBase sender, object args)
-        {
-            await UpdateSubfoldersAsync();
+            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () => await UpdateSubfoldersAsync());
+            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () => await ReloadImagesAsync());
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(InvokeContentsChanged);
         }
 
         public static bool operator ==(FolderItem f1, FolderItem f2)

@@ -38,6 +38,7 @@ namespace Inzynierka.Views
 
         public MainPage()
         {
+            MainThreadDispatcherService.Initialize(Window.Current.Dispatcher);
             InitializeThings();
             InitializeComponent();
 
@@ -64,7 +65,7 @@ namespace Inzynierka.Views
             }
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
         }
@@ -84,9 +85,12 @@ namespace Inzynierka.Views
 
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private async void TreeViewPage_ItemSelected(object sender, TreeViewItemSelectedEventArgs e)
+        private void TreeViewPage_ItemSelected(object sender, TreeViewItemSelectedEventArgs e)
         {
-            await imageGalleryPage.AccessFolder(e.Parameter);
+            if (e.Parameter is object)
+            {
+                imageGalleryPage.AccessFolder(e.Parameter);
+            }
         }
 
         private async void imageGalleryPage_ImageClicked(object sender, EventArgs e)

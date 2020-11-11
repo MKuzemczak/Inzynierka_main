@@ -47,35 +47,7 @@ namespace Inzynierka.Services
                 return null;
 
             StorageApplicationPermissions.FutureAccessList.Add(folder);
-            return await FolderItem.GetInstanceFromStorageFolder(folder);
-            // TODO: Scan images in folder here
-        }
-
-        private static async Task<DatabaseVirtualFolder> AddToDatabase(StorageFolder folder, int parentId = -1)
-        {
-            var dbvf = await DatabaseAccessService.InsertVirtualFolderIfNotExistsAsync(folder.Path, parentId);
-            var subs = await folder.GetFoldersAsync();
-
-            foreach(var item in subs)
-            {
-                await AddToDatabase(item, dbvf.Id);
-            }
-
-            List<string> fileTypeFilter = new List<string>();
-            fileTypeFilter.Add(".jpg");
-            fileTypeFilter.Add(".png");
-            fileTypeFilter.Add(".bmp");
-            fileTypeFilter.Add(".gif");
-            var queryOptions = new QueryOptions(CommonFileQuery.OrderByName, fileTypeFilter);
-            queryOptions.FolderDepth = FolderDepth.Shallow;
-            var files = await folder.CreateFileQueryWithOptions(queryOptions).GetFilesAsync();
-
-            foreach (var file in files)
-            {
-                await DatabaseAccessService.InsertImageAsync(file.Path, false, dbvf.Id);
-            }
-
-            return dbvf;
+            return await FolderItem.GetInstanceFromStorageFolder(folder, isRoot: true);
         }
 
         public static async Task<List<FolderItem>> GetAllFolders()
@@ -92,49 +64,49 @@ namespace Inzynierka.Services
             return result;
         }
 
-        public static async Task PickAndImportImagesToFolder(FolderItem folder)
-        {
-            var picker = new FileOpenPicker();
-            picker.ViewMode = PickerViewMode.Thumbnail;
-            picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-            picker.FileTypeFilter.Add(".jpg");
-            picker.FileTypeFilter.Add(".jpeg");
-            picker.FileTypeFilter.Add(".png");
-            picker.FileTypeFilter.Add(".gif");
+        //public static async Task PickAndImportImagesToFolder(FolderItem folder)
+        //{
+        //    var picker = new FileOpenPicker();
+        //    picker.ViewMode = PickerViewMode.Thumbnail;
+        //    picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+        //    picker.FileTypeFilter.Add(".jpg");
+        //    picker.FileTypeFilter.Add(".jpeg");
+        //    picker.FileTypeFilter.Add(".png");
+        //    picker.FileTypeFilter.Add(".gif");
 
-            var files = await picker.PickMultipleFilesAsync();
-            if (files != null && files.Count > 0)
-            {
-                var recentStateMessage = StateMessaging.SendLoadingMessage("Scanning imported images...");
-                var imageItems = await folder.AddFilesToFolder(files);
+        //    var files = await picker.PickMultipleFilesAsync();
+        //    if (files != null && files.Count > 0)
+        //    {
+        //        var recentStateMessage = StateMessaging.SendLoadingMessage("Scanning imported images...");
+        //        var imageItems = await folder.AddFilesToFolder(files);
 
-                CurrentlyScannedFolder = folder;
+        //        CurrentlyScannedFolder = folder;
 
-                var pickTaskIds = new List<int>();
-                //try
-                //{
-                //    int compareTaskId = BackendConctroller.CompareImages(
-                //        imageItems,
-                //        FindSimilarFinishedHandler);
-                //    pickTaskIds.Add(compareTaskId);
-                //}
-                //catch (Exception e)
-                //{
+        //        var pickTaskIds = new List<int>();
+        //        //try
+        //        //{
+        //        //    int compareTaskId = BackendConctroller.CompareImages(
+        //        //        imageItems,
+        //        //        FindSimilarFinishedHandler);
+        //        //    pickTaskIds.Add(compareTaskId);
+        //        //}
+        //        //catch (Exception e)
+        //        //{
 
-                //}
+        //        //}
 
-                // TODO: uncomment when backend provides quality check
-                //int qualityTaskId = BackendConctroller.CheckImagesQuality(
-                //    imageItems,
-                //    CheckQualityFinishedHandler);
-                //pickTaskIds.Add(qualityTaskId);
-                FolderPickImages.Add(FolderPickCntr, imageItems);
-                FolderPickTasks.Add(FolderPickCntr, pickTaskIds);
-                FolderPickFolder.Add(FolderPickCntr, folder);
-                FolderPickStateMessage.Add(FolderPickCntr, recentStateMessage);
-            }
-            FolderPickCntr++;
-        }
+        //        // TODO: uncomment when backend provides quality check
+        //        //int qualityTaskId = BackendConctroller.CheckImagesQuality(
+        //        //    imageItems,
+        //        //    CheckQualityFinishedHandler);
+        //        //pickTaskIds.Add(qualityTaskId);
+        //        FolderPickImages.Add(FolderPickCntr, imageItems);
+        //        FolderPickTasks.Add(FolderPickCntr, pickTaskIds);
+        //        FolderPickFolder.Add(FolderPickCntr, folder);
+        //        FolderPickStateMessage.Add(FolderPickCntr, recentStateMessage);
+        //    }
+        //    FolderPickCntr++;
+        //}
 
         //private static async void FindSimilarFinishedHandler(ControllerTaskResultMessage result)
         //{
@@ -195,27 +167,27 @@ namespace Inzynierka.Services
         //    await CheckAllTasksInFolderPickDone(folderPick);
         //}
 
-        private static async Task CheckAllTasksInFolderPickDone(int folderPick)
-        {
-            if (FolderPickTasks[folderPick].Count > 0)
-                return;
+        //private static async Task CheckAllTasksInFolderPickDone(int folderPick)
+        //{
+        //    if (FolderPickTasks[folderPick].Count > 0)
+        //        return;
 
-            await MarkImagesScanned(FolderPickImages[folderPick]);
-            FolderPickTasks.Remove(folderPick);
-            FolderPickImages.Remove(folderPick);
-            await FolderPickFolder[folderPick].UpdateQueryAsync();
-            FolderPickFolder.Remove(folderPick);
-            StateMessaging.RemoveMessage(FolderPickStateMessage[folderPick]);
-            FolderPickStateMessage.Remove(folderPick);
-            StateMessaging.SendInfoMessage("Images scanned successfully", 5000);
-        }
+        //    await MarkImagesScanned(FolderPickImages[folderPick]);
+        //    FolderPickTasks.Remove(folderPick);
+        //    FolderPickImages.Remove(folderPick);
+        //    await FolderPickFolder[folderPick].UpdateQueryAsync();
+        //    FolderPickFolder.Remove(folderPick);
+        //    StateMessaging.RemoveMessage(FolderPickStateMessage[folderPick]);
+        //    FolderPickStateMessage.Remove(folderPick);
+        //    StateMessaging.SendInfoMessage("Images scanned successfully", 5000);
+        //}
 
-        private static async Task MarkImagesScanned(List<ImageItem> imageItems)
-        {
-            foreach (var item in imageItems)
-            {
-                await item.MarkScannedAsync();
-            }
-        }
+        //private static async Task MarkImagesScanned(List<ImageItem> imageItems)
+        //{
+        //    foreach (var item in imageItems)
+        //    {
+        //        await item.MarkScannedAsync();
+        //    }
+        //}
     }
 }

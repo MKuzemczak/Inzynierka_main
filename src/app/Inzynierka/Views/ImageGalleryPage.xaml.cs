@@ -30,10 +30,7 @@ namespace Inzynierka.Views
 
         #region PROPERTIES
         public ImageDataSource Source { get; set; }
-        public FolderItem SelectedContentFolder { get; set; } = null;
-
-        // needed for marshaling calls back to UI thread
-        private CoreDispatcher _uiThreadDispatcher;
+        public FolderItemFilteredImagesProvider FilteredImagesProvider { get; set; }
 
         private bool IsItemClickedWithThisClick = false;
         private ImageItem ClickedItemItem { get; set; }
@@ -55,25 +52,31 @@ namespace Inzynierka.Views
         {
             InitializeComponent();
             Loaded += ImageGalleryPage_OnLoaded;
-
-            _uiThreadDispatcher = Window.Current.Dispatcher;
         }
 
         #region METHODS
-        public async Task AccessFolder(FolderItem folder)
+        public void SetImagesProvider(FolderItemFilteredImagesProvider provider)
         {
-            if (folder is null)
+            if (provider is null)
                 return;
 
-            if (SelectedContentFolder != folder)
+            if (FilteredImagesProvider != provider)
             {
-                if (SelectedContentFolder is object)
-                    SelectedContentFolder.ContentsChanged -= SelectedContentFolder_ContentsChanged;
-                SelectedContentFolder = folder;
-                SelectedContentFolder.ContentsChanged += SelectedContentFolder_ContentsChanged;
+                if (FilteredImagesProvider is object)
+                {
+                    FilteredImagesProvider.ContentsChanged -= SelectedContentFolder_ContentsChanged;
+                }
+
+                FilteredImagesProvider = provider;
+                FilteredImagesProvider.ContentsChanged += SelectedContentFolder_ContentsChanged;
             }
 
-            Source = await ImageLoaderService.GetImageGalleryDataAsync(SelectedContentFolder);
+            LoadNewData();
+        }
+
+        private void LoadNewData()
+        {
+            Source = ImageDataSource.GetDataSource(FilteredImagesProvider.GetRawImageItems());
 
             if (Source != null)
             {
@@ -81,15 +84,10 @@ namespace Inzynierka.Views
             }
         }
 
-        public async void ReloadFolder()
-        {
-            await AccessFolder(SelectedContentFolder);
-        }
-
         // simple protection from multiple SetTagsToFilter called
         private int SetTagsToFilterRequestCntr = 0;
 
-        public async Task SetTagsToFilter(List<string> tags)
+        public async Task SetTagsToFilterAsync(List<string> tags)
         {
             int cntrState = ++SetTagsToFilterRequestCntr;
             Source.StopTasks();
@@ -97,7 +95,7 @@ namespace Inzynierka.Views
             // giving the data source time to cancel its work
             await Task.Delay(500);
             if (cntrState == SetTagsToFilterRequestCntr)
-                await SelectedContentFolder?.FilterWithTags(tags);
+                FilteredImagesProvider?.FilterWithTags(tags);
         }
 
         private void Set<T>(ref T storage, T value, [CallerMemberName]string propertyName = null)
@@ -114,32 +112,18 @@ namespace Inzynierka.Views
         #endregion
 
         #region EVENT_HANDLERS
-        private async void ImageGalleryPage_OnLoaded(object sender, RoutedEventArgs e)
+        private void ImageGalleryPage_OnLoaded(object sender, RoutedEventArgs e)
         {
-            if (SelectedContentFolder != null)
+            if (FilteredImagesProvider?.Folder is object)
             {
-                SelectedContentFolder.ContentsChanged += SelectedContentFolder_ContentsChanged;
-
-                Source = await ImageLoaderService.GetImageGalleryDataAsync(SelectedContentFolder);
-
-                if (Source != null)
-                {
-                    imagesGridView.ItemsSource = Source;
-                }
+                LoadNewData();
             }
         }
 
-        private void SelectedContentFolder_ContentsChanged(object sender, EventArgs e)
+        private async void SelectedContentFolder_ContentsChanged(object sender, EventArgs e)
         {
             // This callback can occur on a different thread so we need to marshal it back to the UI thread
-            if (!_uiThreadDispatcher.HasThreadAccess)
-            {
-                var t = _uiThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, ReloadFolder);
-            }
-            else
-            {
-                ReloadFolder();
-            }
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(LoadNewData);
         }
 
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -159,7 +143,7 @@ namespace Inzynierka.Views
             if (ClickedItemItem != null)
             {
                 ImageNavigationHelper.ContainingDataSource = imagesGridView.ItemsSource as ImageDataSource;
-                ImageNavigationHelper.ContainingFolder = SelectedContentFolder;
+                ImageNavigationHelper.ContainingFolder = FilteredImagesProvider.Folder;
                 ImageNavigationHelper.SelectedImage = ClickedItemItem;
                 ImageClicked?.Invoke(this, new EventArgs());
             }
@@ -219,7 +203,6 @@ namespace Inzynierka.Views
         {
             if (DragAndDropHelper.DropSuccessful)
             {
-                ReloadFolder();
                 DragAndDropHelper.DropSuccessful = false;
             }
 
@@ -228,9 +211,6 @@ namespace Inzynierka.Views
 
         private void ThumbnailGrid_DragOver(object sender, DragEventArgs e)
         {
-            var targetGroup = ((sender as Grid).DataContext as ImageItem).Group;
-            if (targetGroup is null || targetGroup.Id < 0)
-                return;
             e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Copy;
             e.DragUIOverride.Caption = "Add to group";
             e.DragUIOverride.IsCaptionVisible = true;
@@ -240,20 +220,7 @@ namespace Inzynierka.Views
 
         private async void ThumbnailGrid_Drop(object sender, DragEventArgs e)
         {
-            //var targetGroup = ((sender as Grid).DataContext as ImageItem).Group;
 
-            //if (targetGroup is null || targetGroup.Id < 0)
-            //    return;
-
-            //foreach (var item in DragAndDropHelper.DraggedItems)
-            //{
-            //    await (item as ImageItem).AddToGroupAsync(targetGroup);
-            //}
-
-            //if (DragAndDropHelper.DraggedItems.Count > 0)
-            //{
-            //    SelectedContentFolder.ReorderImages();
-            //}
         }
 
         private void ImagesGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -264,61 +231,6 @@ namespace Inzynierka.Views
 
         #region RIGHT_CLICK_EVENT_HANDLERS
 
-        //private async void AddToNewGroup_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var selectedItems = imagesGridView.SelectedItems.Select(i => i as ImageItem).ToList();
-
-        //    await SelectedContentFolder.GroupImagesAsync(selectedItems);
-        //    SelectedContentFolder.ReorderImages();
-        //}
-
-        private void SelectGroup_Click(object sender, RoutedEventArgs e)
-        {
-            if (RightTappedImageItem?.Group is null)
-                return;
-
-            var group = SelectedContentFolder.GetGroupOfImageItems(RightTappedImageItem.Group.Id);
-            imagesGridView.SelectedItems.Clear();
-
-            foreach (var item in group)
-            {
-                imagesGridView.SelectedItems.Add(item);
-            }
-        }
-
-        //private async void MergeGroups_Click(object sender, RoutedEventArgs e)
-        //{
-        //    var selectedItems = imagesGridView.SelectedItems;
-        //    var allItems = SelectedContentFolder.GetRawImageItems();
-
-        //    if (selectedItems.Count < 2)
-        //        return;
-
-        //    var baseGroup = (selectedItems[0] as ImageItem).Group;
-        //    var prevGroup = baseGroup;
-        //    var selectedGroups = new List<DatabaseSimilaritygroup>();
-        //    foreach (ImageItem item in selectedItems)
-        //    {
-        //        if (item.Group != prevGroup)
-        //        {
-        //            prevGroup = item.Group;
-        //            selectedGroups.Add(prevGroup);
-        //        }
-        //    }
-
-        //    bool reorder = false;
-        //    foreach (var item in allItems)
-        //    {
-        //        if (selectedGroups.Contains(item.Group))
-        //        {
-        //            await item.AddToGroupAsync(baseGroup);
-        //            reorder = true;
-        //        }
-        //    }
-
-        //    if (reorder)
-        //        SelectedContentFolder.ReorderImages();
-        //}
 
         private async void CopyImage_Click(object sender, RoutedEventArgs e)
         {
@@ -381,53 +293,6 @@ namespace Inzynierka.Views
                         }
                     }
                 }
-                ReloadFolder();
-            }
-        }
-
-        private async void RemoveImageFromAlbum_Click(object sender, RoutedEventArgs e)
-        {
-            var files = imagesGridView.SelectedItems;
-
-            string title = "Remove image";
-            string message = $"Are you sure you want to remove this image from {SelectedContentFolder?.Name}?";
-
-            if (files.Count == 0)
-                return;
-            else if (files.Count > 1)
-            {
-                title = "Remove images";
-                message = $"Are you sure you want to remove those images from {SelectedContentFolder?.Name}?";
-            }
-
-            ContentDialog removeImageDialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                PrimaryButtonText = "Remove",
-                CloseButtonText = "Cancel"
-            };
-            ContentDialogResult result = await removeImageDialog.ShowAsync();
-            // Delete the file if the user clicked the primary button.
-            /// Otherwise, do nothing.
-            if (result == ContentDialogResult.Primary)
-            {
-                foreach (var file in files)
-                {
-                    if (file is ImageItem imageItem)
-                    {
-                        try
-                        {
-                            await DatabaseAccessService.DeleteImageAsync(imageItem.DatabaseId);
-                        }
-                        catch (Exception)
-                        {
-                            var messageDialog = new MessageDialog("Operation failed");
-                            await messageDialog.ShowAsync();
-                        }
-                    }
-                }
-                await SelectedContentFolder.UpdateQueryAsync();
             }
         }
 

@@ -23,39 +23,39 @@ namespace Inzynierka.Views
     /// </summary>
     public sealed partial class ImageGalleryWithTagFilterPage : Page
     {
-        private FolderItem AccessedFolder { get; set; }
+        private FolderItemFilteredImagesProvider FilteredImagesProvider { get; set; } = new FolderItemFilteredImagesProvider();
         private List<ImageItem> SelectedImages { get; set; } = new List<ImageItem>();
 
         public bool IsPaneOpen = false;
         public bool IsLoading = false;
 
-
-
         public event EventHandler ImageClicked;
-
-
 
         public ImageGalleryWithTagFilterPage()
         {
             this.InitializeComponent();
+            imageGalleryPage.SetImagesProvider(FilteredImagesProvider);
+            tagFilterPage.SetImagesProvider(FilteredImagesProvider);
         }
 
         private void ImageGalleryPage_ImageClicked(object sender, EventArgs e)
         {
             ImageClicked?.Invoke(this, e);
         }
-        public async Task AccessFolder(FolderItem folder)
+        public void AccessFolder(FolderItem folder)
         {
-            AccessedFolder = folder;
+            if (folder is null)
+                throw new ArgumentNullException("Tried to access null FolderItem object");
+
+            FilteredImagesProvider.Folder = folder;
+            // TODO: fix showing tags loading indicator
             ShowTagsLoadingIndicator();
-            await tagFilterPage.AccessFolderAsync(folder);
             HideTagsLoadingIndicator();
-            await imageGalleryPage.AccessFolder(folder);
         }
 
         private async void TagFilterPage_SelectedTagsChanged(object sender, SelectedTagsChangedEventArgs e)
         {
-            await imageGalleryPage.SetTagsToFilter(e.SelectedTags);
+            await imageGalleryPage.SetTagsToFilterAsync(e.SelectedTags);
         }
 
         private void OpenPaneButton_Click(object sender, RoutedEventArgs e)
@@ -131,7 +131,8 @@ namespace Inzynierka.Views
                 await item.AddTagsAsync(tags);
             }
 
-            await tagFilterPage.AccessFolderAsync(AccessedFolder);
+            // TODO: check if it isn't called from COntentsChanged event handler
+            tagFilterPage.ScanAccessedFolderForTags();
             SetSelectedTagsFromImages(SelectedImages);
         }
 
@@ -146,7 +147,9 @@ namespace Inzynierka.Views
             {
                 await item.DeleteTagAsync(e.Tag);
             }
-            await tagFilterPage.AccessFolderAsync(AccessedFolder);
+
+            // TODO: check if it isn't called from COntentsChanged event handler
+            tagFilterPage.ScanAccessedFolderForTags();
             SetSelectedTagsFromImages(SelectedImages);
         }
     }

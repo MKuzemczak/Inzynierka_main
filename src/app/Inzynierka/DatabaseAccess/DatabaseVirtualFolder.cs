@@ -10,5 +10,6 @@ namespace Inzynierka.DatabaseAccess
     {
         public string Path { get; set; }
         public int Id { get; set; }
+        public bool IsRoot { get; set; } = false;
     }
 }

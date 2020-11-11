@@ -14,9 +14,6 @@ namespace Inzynierka.Models
 {
     public class ImageDataSource : INotifyCollectionChanged, System.Collections.IList, IItemsRangeInfo
     {
-        // Folder that we are browsing
-        private FolderItem _folder;
-
         // Dispatcher so we can marshal calls back to the UI thread
         private CoreDispatcher _dispatcher;
 
@@ -43,33 +40,11 @@ namespace Inzynierka.Models
 
         // Factory method to create the datasource
         // Requires async work which is why it needs a factory rather than being part of the constructor
-        public static async Task<ImageDataSource> GetDataSource(FolderItem folder)
+        public static ImageDataSource GetDataSource(List<ImageItem> imageItems)
         {
             ImageDataSource ds = new ImageDataSource();
-            await ds.SetFolder(folder);
+            ds.SetContainer(imageItems);
             return ds;
-        }
-
-        // Set functionality for the folder
-        public async Task SetFolder(FolderItem folder)
-        {
-            // Initialize the query and register for changes
-            _folder = folder;
-            UpdateContainer();
-        }
-
-        // Handler for when the filesystem notifies us of a change to the file list
-        private void Folder_ContentsChanged(object sender, EventArgs e)
-        {
-            // This callback can occur on a different thread so we need to marshal it back to the UI thread
-            if (!_dispatcher.HasThreadAccess)
-            {
-                var t = _dispatcher.RunAsync(CoreDispatcherPriority.Normal, ResetCollection);
-            }
-            else
-            {
-                ResetCollection();
-            }
         }
 
         // Handles a change notification for the list of files from the OS
@@ -92,9 +67,9 @@ namespace Inzynierka.Models
             itemCache.StopTasks();
         }
 
-        void UpdateContainer()
+        void SetContainer(List<ImageItem> imageItems)
         {
-            ImageItems = _folder.GetRawImageItems();
+            ImageItems = imageItems;
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 

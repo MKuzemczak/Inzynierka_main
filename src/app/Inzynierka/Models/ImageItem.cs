@@ -191,7 +191,7 @@ namespace Inzynierka.Models
 
 
         // Fetches all the data for the specified file
-        public async static Task<ImageItem> FromStorageFile(
+        public async static Task<ImageItem> FromStorageFileAsync(
             StorageFile f, CancellationToken ct, Options options = Options.Image)
         {
             ImageItem item = new ImageItem()
@@ -226,7 +226,7 @@ namespace Inzynierka.Models
 
         public async static Task<ImageItem> FromStorageFile(StorageFile f, Options options = Options.Image)
         {
-            return await FromStorageFile(f, new CancellationToken(), options);
+            return await FromStorageFileAsync(f, new CancellationToken(), options);
         }
 
         public async Task DeleteFromDiskAsync()

@@ -35,7 +35,7 @@ namespace Inzynierka.DatabaseAccess
             { await command.ExecuteReaderAsync(); }
 
             using (SqliteCommand command = new SqliteCommand("CREATE TABLE IF NOT EXISTS VIRTUALFOLDER" +
-                        "(Id INTEGER PRIMARY KEY NOT NULL, path text NOT NULL)", Database))
+                        "(Id INTEGER PRIMARY KEY NOT NULL, path text NOT NULL, isRoot BOOLEAN NOT NULL CHECK (isRoot IN (0,1)))", Database))
             { await command.ExecuteReaderAsync(); }
 
             using (SqliteCommand command = new SqliteCommand("CREATE TABLE IF NOT EXISTS VIRTUALFOLDER_IMAGE" +
@@ -130,7 +130,7 @@ namespace Inzynierka.DatabaseAccess
             List<DatabaseVirtualFolder> result = new List<DatabaseVirtualFolder>();
             
             SqliteCommand selectCommand = new SqliteCommand
-                ("SELECT * FROM VIRTUALFOLDER WHERE Id NOT IN (SELECT CHILD_Id FROM VIRTUALFOLDER_RELATION)", Database);
+                ("SELECT * FROM VIRTUALFOLDER WHERE isRoot = 1", Database);
 
             SqliteDataReader query = await selectCommand.ExecuteReaderAsync();
 
@@ -140,7 +140,8 @@ namespace Inzynierka.DatabaseAccess
                 DatabaseVirtualFolder folder = new DatabaseVirtualFolder()
                 {
                     Id = query.GetInt32(0),
-                    Path = query.GetString(1)
+                    Path = query.GetString(1),
+                    IsRoot = query.GetBoolean(2)
                 };
                     
                 result.Add(folder);
@@ -279,33 +280,33 @@ namespace Inzynierka.DatabaseAccess
             return await GetImagesCountInFolderAsync(folder.Id);
         }
 
-        public static async Task<DatabaseVirtualFolder> InsertVirtualFolderIfNotExistsAsync(string path, int parentId = -1)
+        public static async Task<DatabaseVirtualFolder> InsertVirtualFolderIfNotExistsAsync(string path, bool isRoot = false, int parentId = -1)
         {
             DatabaseVirtualFolder result = new DatabaseVirtualFolder()
             {
                 Path = path
             };
 
-            int rowid = 0;
+            Int64 rowid = 0;
 
             using (SqliteCommand command = new SqliteCommand($@"
                 SELECT Id FROM VIRTUALFOLDER WHERE path = '{path}'", Database))
             {
                 var query = await command.ExecuteReaderAsync();
-                if (query.HasRows)
+                if (query.Read())
                 {
                     result.Id = query.GetInt32(0);
                     return result;
                 }
             }
 
-            using (SqliteCommand command = new SqliteCommand("INSERT INTO VIRTUALFOLDER (path) " +
-                        $"VALUES ('{path}')", Database))
+            using (SqliteCommand command = new SqliteCommand("INSERT INTO VIRTUALFOLDER (path, isRoot) " +
+                        $"VALUES ('{path}', {(isRoot ? 1 : 0)})", Database))
             { await command.ExecuteReaderAsync(); }
 
 
             using (SqliteCommand command = new SqliteCommand("SELECT last_insert_rowid()", Database))
-            { rowid = (int)await command.ExecuteScalarAsync(); }
+            { rowid = (Int64)await command.ExecuteScalarAsync(); }
 
             if (rowid == 0)
             {
@@ -318,7 +319,7 @@ namespace Inzynierka.DatabaseAccess
                 { await command.ExecuteReaderAsync(); }
             }
 
-            result.Id = rowid;
+            result.Id = (int)rowid;
 
             return result;
         }
@@ -620,52 +621,6 @@ namespace Inzynierka.DatabaseAccess
                 $"VALUES ({group.Id}, {imageId})", Database))
                 { await command.ExecuteReaderAsync(); }
             }
-        }
-    }
-
-
-    public class Triple<T1, T2, T3>
-    {
-        public T1 Item1 { get; }
-        public T2 Item2 { get; }
-        public T3 Item3 { get; }
-
-        public Triple(T1 item1, T2 item2, T3 item3)
-        {
-            Item1 = item1;
-            Item2 = item2;
-            Item3 = item3;
-        }
-
-        public static bool operator ==(Triple<T1, T2, T3> t1, Triple<T1, T2, T3> t2)
-        {
-            return EqualityComparer<T1>.Default.Equals(t1.Item1, t2.Item1) &&
-                   EqualityComparer<T2>.Default.Equals(t1.Item2, t2.Item2) &&
-                   EqualityComparer<T3>.Default.Equals(t1.Item3, t2.Item3);
-        }
-
-        public static bool operator !=(Triple<T1, T2, T3> t1, Triple<T1, T2, T3> t2)
-        {
-            return !(EqualityComparer<T1>.Default.Equals(t1.Item1, t2.Item1) &&
-                   EqualityComparer<T2>.Default.Equals(t1.Item2, t2.Item2) &&
-                   EqualityComparer<T3>.Default.Equals(t1.Item3, t2.Item3));
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is Triple<T1, T2, T3> triple &&
-                   EqualityComparer<T1>.Default.Equals(Item1, triple.Item1) &&
-                   EqualityComparer<T2>.Default.Equals(Item2, triple.Item2) &&
-                   EqualityComparer<T3>.Default.Equals(Item3, triple.Item3);
-        }
-
-        public override int GetHashCode()
-        {
-            int hashCode = 341329424;
-            hashCode = hashCode * -1521134295 + EqualityComparer<T1>.Default.GetHashCode(Item1);
-            hashCode = hashCode * -1521134295 + EqualityComparer<T2>.Default.GetHashCode(Item2);
-            hashCode = hashCode * -1521134295 + EqualityComparer<T3>.Default.GetHashCode(Item3);
-            return hashCode;
         }
     }
 }
