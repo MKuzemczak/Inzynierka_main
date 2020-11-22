@@ -1,3 +1,4 @@
 from .base_message import BaseMessage
-from .find_bones_request_message import FindBonesRequestMessage
-from .find_bones_request_result_message import FindBonesRequestResultMessage
+from .find_bones_request import FindBonesRequest
+from .find_bones_request_result import FindBonesRequestResult
+from .message_from_json import get_message_from_json
