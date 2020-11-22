@@ -1,5 +1,5 @@
-from .messages import FindBonesRequestMessage, FindBonesRequestResultMessage
-from .structures import BoneSearchResult
+from python_controller.messages import FindBonesRequestMessage, FindBonesRequestResultMessage
+from python_controller.structures import BoneSearchResult
 
 json = "{\"name\": \"FindBonesRequestResult\", \"contents\": [{\"x\":1,\"y\":2}]}"
 m = FindBonesRequestResultMessage.from_json(json)

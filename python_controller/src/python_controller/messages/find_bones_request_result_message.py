@@ -1,5 +1,5 @@
 from . import BaseMessage
-from ..structures import BoneSearchResult
+from python_controller.structures import BoneSearchResult
 
 class FindBonesRequestResultMessage(BaseMessage):
     _name = "FindBonesRequestResult"
