@@ -355,11 +355,8 @@ namespace Inzynierka.DatabaseAccess
             { await command.ExecuteReaderAsync(); }
         }
 
-        public static async Task<DatabaseImage> InsertImageAsync(string path, bool scanned, int parentId)
+        public static async Task<DatabaseImage> InsertImageAsync(string path, bool scanned)
         {
-            if (parentId < 1)
-                throw new ArgumentException("Error: Parent ID smaller than 1 - doesn't exist.");
-
             using (SqliteCommand command = new SqliteCommand("INSERT INTO IMAGE (path, scanned) " +
                         $"VALUES ('{path}', {(scanned ? 1 : 0)})", Database))
             { await command.ExecuteReaderAsync(); }
@@ -373,10 +370,6 @@ namespace Inzynierka.DatabaseAccess
             {
                 throw new SqliteException("SQLite access exception: Something went wrong!", 1);
             }
-
-            using (SqliteCommand command = new SqliteCommand("INSERT INTO VIRTUALFOLDER_IMAGE (IMAGE_Id, VIRTUALFOLDER_Id) " +
-                $"VALUES ({rowid}, {parentId})", Database))
-            { await command.ExecuteReaderAsync(); }
 
             return new DatabaseImage() { Id = (int)rowid, Path = path, Scanned = scanned };
         }
@@ -556,6 +549,39 @@ namespace Inzynierka.DatabaseAccess
                 return tagindb;
             }
         }
+
+        public static async Task<DatabaseImage> GetImageFromPathAsync(string path)
+        {
+            DatabaseImage result = null;
+            SqliteCommand selectCommand = new SqliteCommand
+                ($"SELECT * FROM IMAGE WHERE path = '{path}'", Database);
+            SqliteDataReader query = await selectCommand.ExecuteReaderAsync();
+
+            while (query.Read())
+            {
+                result = new DatabaseImage()
+                {
+                    Id = query.GetInt32(0),
+                    Path = path,
+                    Scanned = query.GetBoolean(2)
+                };
+            }
+
+            if (result is null)
+                return null;
+
+            selectCommand = new SqliteCommand
+                ($"SELECT tag FROM TAG WHERE Id IN (SELECT TAG_Id FROM IMAGE_TAG WHERE IMAGE_Id = {result.Id})", Database);
+            query = await selectCommand.ExecuteReaderAsync();
+
+            while (query.Read())
+            {
+                result.Tags.Add(query.GetString(0));
+            }
+
+            return result;
+        }
+
         public static async Task<Tuple<int, int>> InsertImageTagAsync(string ImageId, string tag)
         {
             Tuple<int, string> tagindb = await InsertTagAsync(tag);

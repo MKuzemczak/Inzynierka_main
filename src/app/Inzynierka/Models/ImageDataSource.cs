@@ -14,9 +14,6 @@ namespace Inzynierka.Models
 {
     public class ImageDataSource : INotifyCollectionChanged, System.Collections.IList, IItemsRangeInfo
     {
-        // Dispatcher so we can marshal calls back to the UI thread
-        private CoreDispatcher _dispatcher;
-
         private List<ImageItem> ImageItems = new List<ImageItem>();
 
         // Cache for the file data that is currently being used
@@ -29,9 +26,6 @@ namespace Inzynierka.Models
 
         private ImageDataSource()
         {
-            //Setup the dispatcher for the UI thread
-            _dispatcher = Windows.UI.Xaml.Window.Current.Dispatcher;
-
             // The ItemCacheManager does most of the heavy lifting.
             // We pass it a callback that it will use to actually fetch data, and the max size of a request
             this.itemCache = new ItemCacheManager<ImageItem>(fetchDataCallback);

@@ -80,23 +80,24 @@ namespace Inzynierka.Views
 
         private void UpdateArrowsVisibility()
         {
-            if (CurrentIndexInImageData == 0)
-            {
-                previousArrow.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                previousArrow.Visibility = Visibility.Visible;
-            }
+            // TODO: take care of previous and next arrows
+            //if (CurrentIndexInImageData == 0)
+            //{
+            //    previousArrow.Visibility = Visibility.Collapsed;
+            //}
+            //else
+            //{
+            //    previousArrow.Visibility = Visibility.Visible;
+            //}
 
-            if (CurrentIndexInImageData  == ImageData.Count - 1)
-            {
-                nextArrow.Visibility = Visibility.Collapsed;
-            }
-            else
-            {
-                nextArrow.Visibility = Visibility.Visible;
-            }
+            //if (CurrentIndexInImageData  == ImageData.Count - 1)
+            //{
+            //    nextArrow.Visibility = Visibility.Collapsed;
+            //}
+            //else
+            //{
+            //    nextArrow.Visibility = Visibility.Visible;
+            //}
         }
 
         private async void Previous_Tapped(object sender, TappedRoutedEventArgs e)

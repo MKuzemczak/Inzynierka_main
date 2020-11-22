@@ -33,9 +33,7 @@ namespace Inzynierka.Services
 
             if (!MainThreadDispatcher.HasThreadAccess)
             {
-                Task result = null;
-                await MainThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, () => result = Task.Run(method));
-                await result;
+                await MainThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, () => method());
             }
             else
             {
@@ -52,9 +50,7 @@ namespace Inzynierka.Services
 
             if (!MainThreadDispatcher.HasThreadAccess)
             {
-                Task result = null;
-                await MainThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, () => result = method());
-                await result;
+                await MainThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, async () => await method());
             }
             else
             {

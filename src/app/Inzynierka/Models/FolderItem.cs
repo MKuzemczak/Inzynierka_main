@@ -12,6 +12,7 @@ using Windows.UI.Core;
 
 using Inzynierka.DatabaseAccess;
 using Inzynierka.Services;
+using Inzynierka.Models.ModelsEventArgs;
 
 namespace Inzynierka.Models
 {
@@ -46,6 +47,8 @@ namespace Inzynierka.Models
         public StorageFolder Folder { get; protected set; }
 
         public event EventHandler ContentsChanged;
+        public event EventHandler<FolderItemRenamedEventArgs> Renamed;
+        public event EventHandler RemovedFromApp;
 
         private Dictionary<int, ImageItem> _allImagesById = new Dictionary<int, ImageItem>();
         protected Dictionary<int, ImageItem> AllImagesById
@@ -59,6 +62,7 @@ namespace Inzynierka.Models
         }
 
         protected IReadOnlyDictionary<string, ImageItem> AllImagesByPath { get; set; } = new Dictionary<string, ImageItem>();
+
 
         public StorageFileQueryResult ImageQuery { get; set; }
 
@@ -153,23 +157,16 @@ namespace Inzynierka.Models
             {
                 throw new FormatException();
             }
+            var oldName = Folder.Name;
             await DatabaseAccessService.RenameVirtualFolderAsync(DatabaseId, newName);
             await Folder.RenameAsync(newName);
-        }
-
-        public async Task SetParentAsync(FolderItem folder)
-        {
-            if (folder is FolderItem)
-            {
-                await DatabaseAccessService.SetParentOfFolderAsync(DatabaseId, (folder as FolderItem).DatabaseId);
-                ParentFolder?.Subfolders?.Remove(this);
-                ParentFolder = folder;
-                folder.Subfolders.Add(this);
-            }
+            InvokeRenamed(oldName, newName);
         }
 
         public async Task DeleteAsync()
         {
+            // TODO: such delete should be available only for root folders. Consider moving all getInstance, FolderItems, delete functionality to folderManagerService
+            FolderItems.Remove(Path);
             if (Subfolders is object)
             {
                 int subCount = Subfolders.Count;
@@ -184,55 +181,13 @@ namespace Inzynierka.Models
             ParentFolder = null;
             Subfolders = null;
             Folder = null;
+            InvokeRemovedFromApp();
         }
 
         public virtual async Task ReloadImagesAsync()
         {
-            var queriedImages = await ImageQuery.GetFilesAsync();
-            var raw = await DatabaseAccessService.GetVirtualfolderImagesWithGroupsAndTags(DatabaseId);
-            var rawPathDict = raw.ToDictionary(i => i.Path, i => i);
-            var queriedImagesCount = queriedImages.Count;
-
-            // finding images not in database and images in database that don't exist
-            for (int i = queriedImagesCount - 1; i >= 0; i--)
-            {
-                DatabaseImage img = null;
-                var path = queriedImages[i].Path;
-                if (rawPathDict.TryGetValue(path, out img))
-                {
-                    rawPathDict.Remove(path);
-                }
-                else
-                {
-                    // adding image to database and to raw
-                    var databaseImage = await DatabaseAccessService.InsertImageAsync(queriedImages[i].Path, false, DatabaseId);
-                    raw.Add(databaseImage);
-                }
-            }
-
-            // deleting non-existent images from database and from raw
-            foreach (var image in rawPathDict.Values)
-            {
-                await DatabaseAccessService.DeleteImageAsync(image.Id);
-                raw.Remove(image);
-            }
-
-            // Removing non-existing ImageItems, preserving existing and adding new
-            var newAllImagesById = new Dictionary<int, ImageItem>();
-            foreach (var rawImage in raw)
-            {
-                ImageItem item = null;
-
-                if (AllImagesById.TryGetValue(rawImage.Id, out item))
-                {
-                    newAllImagesById.Add(item.DatabaseId, item);
-                }
-                else
-                {
-                    newAllImagesById.Add(rawImage.Id, await ImageItem.FromDatabaseImageAsync(rawImage, viewMode: ImageItem.Options.None));
-                }
-            }
-            AllImagesById = newAllImagesById;
+            var list = await ImageItemManager.GetImageItemsInFolderAsync(this);
+            AllImagesById = list.ToDictionary(i => i.DatabaseId, i => i);
         }
 
         public async Task<FolderItem> CreateSubfolderAsync(string name)
@@ -246,11 +201,26 @@ namespace Inzynierka.Models
             ContentsChanged?.Invoke(this, new EventArgs());
         }
 
+        public void InvokeRenamed(string oldName, string newName)
+        {
+            Renamed?.Invoke(this, new FolderItemRenamedEventArgs(oldName, newName));
+        }
+
+        public void InvokeRemovedFromApp()
+        {
+            RemovedFromApp?.Invoke(this, new EventArgs());
+        }
+
+
         protected virtual async void HandleQueryContentsChanged(IStorageQueryResultBase sender, object args)
         {
-            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () => await UpdateSubfoldersAsync());
-            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () => await ReloadImagesAsync());
-            await MainThreadDispatcherService.MarshalToMainThreadAsync(InvokeContentsChanged);
+            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(
+                async () =>
+                {
+                    await UpdateSubfoldersAsync();
+                    await ReloadImagesAsync();
+                    InvokeContentsChanged();
+                });
         }
 
         public static bool operator ==(FolderItem f1, FolderItem f2)

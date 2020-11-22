@@ -20,11 +20,21 @@
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="6*" />
-                <ColumnDefinition Width="*" />
+                <!--<ColumnDefinition Width="6*" />
+                <ColumnDefinition Width="*" />-->
             </Grid.ColumnDefinitions>
-
             <Rectangle
+                Grid.Column="0"
+                Canvas.Left="10"
+                Canvas.Top="10"
+                Width="1000"
+                Height="50">
+                <Rectangle.Fill>
+                    <SolidColorBrush Color="Red" Opacity="0.75"/>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!--<Rectangle
                 Grid.Column="0"
                 Tapped="Previous_Tapped">
                 <Rectangle.Fill>
@@ -58,7 +68,7 @@
                     Source="/Assets/RightArrow.png"
                     HorizontalAlignment="Right"
                     Tapped="Next_Tapped" />
-            </Viewbox>
+            </Viewbox>-->
         </Grid>
 
         <Button

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Inzynierka.DatabaseAccess;
+using Inzynierka.Services;
 using Windows.Storage.Search;
 
 namespace Inzynierka.Models
@@ -45,10 +46,14 @@ namespace Inzynierka.Models
             Folder = folder;
         }
 
-        private void Folder_ContentsChanged(object sender, EventArgs e)
+        private async void Folder_ContentsChanged(object sender, EventArgs e)
         {
-            Filter();
-            InvokeContentsChanged();
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(
+                () =>
+                {
+                    Filter();
+                    InvokeContentsChanged();
+                });
         }
 
         protected void Filter()

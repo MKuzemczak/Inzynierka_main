@@ -45,7 +45,7 @@ namespace Inzynierka.Models
         // Needed for displaying single image in the flip view
         public StorageFile File { get; set; }
 
-        public Options ViewMode { get; set; }
+        public Options StoredImageDataMode { get; set; }
 
         private GroupPosition _positionInGroup = GroupPosition.None;
         public GroupPosition PositionInGroup
@@ -90,7 +90,7 @@ namespace Inzynierka.Models
 
         public async Task ToImageAsync(CancellationToken ct = new CancellationToken())
         {
-            if (ViewMode == Options.Image)
+            if (StoredImageDataMode == Options.Image)
                 return;
             if (ImageData == null)
                 ImageData = new BitmapImage();
@@ -117,12 +117,12 @@ namespace Inzynierka.Models
                 await ImageData.SetSourceAsync(fileStream).AsTask(ct);
             }
 
-            ViewMode = Options.Image;
+            StoredImageDataMode = Options.Image;
         }
 
         public async Task ToThumbnailAsync(CancellationToken ct = new CancellationToken())
         {
-            if (ViewMode == Options.Thumbnail)
+            if (StoredImageDataMode == Options.Thumbnail)
                 return;
             if (ImageData == null)
                 ImageData = new BitmapImage();
@@ -147,21 +147,40 @@ namespace Inzynierka.Models
             if (ImageData is object)
             {
                 await ImageData.SetSourceAsync(thumb);
-                ViewMode = Options.Thumbnail;
+                StoredImageDataMode = Options.Thumbnail;
             }
         }
 
         public void ClearImageData()
         {
-            ViewMode = Options.None;
+            StoredImageDataMode = Options.None;
             ImageData = null;
+        }
+
+        public async Task SetStoredImageDataMode(Options storedImageDataMode, CancellationToken ct = new CancellationToken())
+        {
+            if (storedImageDataMode == StoredImageDataMode)
+                return;
+
+            switch (storedImageDataMode)
+            {
+                case Options.None:
+                    ClearImageData();
+                    break;
+                case Options.Image:
+                    await ToImageAsync(ct);
+                    break;
+                case Options.Thumbnail:
+                    await ToThumbnailAsync(ct);
+                    break;
+            }
         }
 
         // Needed to ensure only one request is in progress at once
         private static SemaphoreSlim gettingFileProperties = new SemaphoreSlim(1);
 
         public static async Task<ImageItem> FromDatabaseImageAsync(
-            DatabaseImage dbimage, CancellationToken ct = new CancellationToken(), Options viewMode = Options.Image)
+            DatabaseImage dbimage, CancellationToken ct = new CancellationToken(), Options storedImageDataMode = Options.Image)
         {
             ImageItem result = new ImageItem()
             {
@@ -170,11 +189,11 @@ namespace Inzynierka.Models
                 Filename = Path.GetFileName(dbimage.Path),
                 Group = dbimage.Group,
                 Tags = dbimage.Tags,
-                ViewMode = viewMode,
+                StoredImageDataMode = storedImageDataMode,
                 Scanned = dbimage.Scanned
             };
             ct.ThrowIfCancellationRequested();
-            switch (viewMode)
+            switch (storedImageDataMode)
             {
                 case Options.Image:
                     await result.ToImageAsync(ct);
@@ -198,7 +217,7 @@ namespace Inzynierka.Models
             {
                 Filename = f.Name,
                 File = f,
-                ViewMode = options
+                StoredImageDataMode = options
             };
 
             ct.ThrowIfCancellationRequested();

@@ -10,6 +10,8 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
 
+using Inzynierka.Services;
+
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=234238
 
 namespace Inzynierka.Views
@@ -60,9 +62,9 @@ namespace Inzynierka.Views
             }
         }
 
-        private void AccessedFolderContentsChangedHandler(object sender, EventArgs e)
+        private async void AccessedFolderContentsChangedHandler(object sender, EventArgs e)
         {
-            ScanAccessedFolderForTags();
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(ScanAccessedFolderForTags);
         }
 
         public void ScanAccessedFolderForTags()

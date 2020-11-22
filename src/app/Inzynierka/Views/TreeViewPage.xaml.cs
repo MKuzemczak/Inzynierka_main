@@ -268,6 +268,7 @@ namespace Inzynierka.Views
 
         private async void ImportImagesButton_Click(object sender, RoutedEventArgs e)
         {
+            // TODO: take care of this
             //FolderItem folder = null;
             //if (GetSelectedFolder() != null)
             //    folder = GetSelectedFolder();
