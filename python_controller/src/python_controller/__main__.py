@@ -1,9 +1,17 @@
+import pathlib
+
 from python_controller.messages import *
 from python_controller.structures import BoneSearchResult
 from python_controller.services import RabbitMQCommunicationService, XRayImagesScanner
 
+yolo_files_path = pathlib.Path('D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files')
+
 com_service = RabbitMQCommunicationService()
-scanner = XRayImagesScanner(com_service)
+scanner = XRayImagesScanner(
+    com_service,
+    str(yolo_files_path.joinpath('yolov3-custom.cfg')),
+    str(yolo_files_path.joinpath('yolov3-custom_final.weights')),
+    str(yolo_files_path.joinpath('class_names.names')))
 
 def callback(message: ExitRequest):
     exit()

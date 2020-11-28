@@ -9,7 +9,7 @@ class FindBonesRequestResult(BaseMessage):
         return "{\"bone_search_results\": [" + ", ".join([str(result) for result in self.bone_search_results]) + "]}"
     
     def to_json(self):
-        return self._prepare_json([result.__dict__ for result in self.bone_search_results])
+        return self._prepare_json([str(result) for result in self.bone_search_results])
 
     @classmethod
     def get_instance_from_message_contents(self, contents: list):
