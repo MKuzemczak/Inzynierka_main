@@ -1,8 +1,9 @@
 import json
 
-from . import FindBonesRequest, FindBonesRequestResult
+from . import ExitRequest, FindBonesRequest, FindBonesRequestResult
 
 message_name_to_cls = {
+    ExitRequest.__name__: ExitRequest,
     FindBonesRequest.__name__: FindBonesRequest,
     FindBonesRequestResult.__name__: FindBonesRequestResult
 }

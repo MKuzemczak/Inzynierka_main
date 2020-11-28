@@ -11,10 +11,10 @@ class BaseMessage(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_instance_from_message_contents(cls, contents: list):
+    def get_instance_from_message_contents(cls, contents: list = []):
         """
             Extracts message contents from the dict and returns an instance of the class
         """
 
     def _prepare_json(self, contents: dict) -> str:
-        return json.dumps({"name": self.name, "contents": contents})
+        return json.dumps({"name": self.__class__.__name__, "contents": contents})

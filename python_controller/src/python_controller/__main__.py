@@ -1,8 +1,19 @@
-from python_controller.messages import FindBonesRequest, FindBonesRequestResult, message_from_json
+from python_controller.messages import *
 from python_controller.structures import BoneSearchResult
+from python_controller.services import RabbitMQCommunicationService
+
+s = RabbitMQCommunicationService()
+
+def callback(message):
+    exit()
+
+s.subscribe(ExitRequest.__name__, callback)
+s.start()
+
 
 
 # json = "{\"name\":\"FindBonesRequest\",\"contents\":[{}]}"
+# "{"name":"FindBonesRequest","contents":[{"hello": "world"}]}"
 # m = message_from_json(json)
 
 # print(m)
