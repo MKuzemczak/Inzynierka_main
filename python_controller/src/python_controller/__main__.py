@@ -1,14 +1,15 @@
 from python_controller.messages import *
 from python_controller.structures import BoneSearchResult
-from python_controller.services import RabbitMQCommunicationService
+from python_controller.services import RabbitMQCommunicationService, XRayImagesScanner
 
-s = RabbitMQCommunicationService()
+com_service = RabbitMQCommunicationService()
+scanner = XRayImagesScanner(com_service)
 
-def callback(message):
+def callback(message: ExitRequest):
     exit()
 
-s.subscribe(ExitRequest.__name__, callback)
-s.start()
+com_service.subscribe(ExitRequest, callback)
+com_service.start()
 
 
 

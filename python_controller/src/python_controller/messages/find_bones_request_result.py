@@ -1,8 +1,8 @@
 from . import BaseMessage
-from python_controller.structures import BoneSearchResult
+from python_controller.structures import BoneSearchResult, BoneSearchResultList
 
 class FindBonesRequestResult(BaseMessage):
-    def __init__(self, bone_search_results: list = []):
+    def __init__(self, bone_search_results: BoneSearchResultList = []):
         self.bone_search_results = bone_search_results
 
     def __str__(self):

@@ -4,7 +4,7 @@ from . import BaseMessage
 
 class FindBonesRequest(BaseMessage):
 
-    def __init__(self, img_paths: str = ""):
+    def __init__(self, img_paths: list = []):
         self.image_paths = img_paths
     
     def to_json(self):
@@ -12,6 +12,4 @@ class FindBonesRequest(BaseMessage):
 
     @classmethod
     def get_instance_from_message_contents(cls, contents: list):
-
-
         return FindBonesRequest(contents)
