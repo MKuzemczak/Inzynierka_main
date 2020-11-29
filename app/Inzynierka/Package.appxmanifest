@@ -11,7 +11,7 @@
 
   <Identity
     Name="Inzynierka"
-    Publisher="CN=Michał Kuzemczak"
+    Publisher="CN=MichalKuzemczak"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="9B9E1BB9-899A-46F3-A233-45B2D7A87BBA" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
