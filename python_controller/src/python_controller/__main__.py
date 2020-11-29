@@ -1,29 +1,6 @@
-import pathlib
+from .run_python_controller import run_python_controller 
 
-from python_controller.messages import *
-from python_controller.structures import BoneSearchResult
-from python_controller.services import RabbitMQCommunicationService, XRayImagesScanner
-
-yolo_files_path = pathlib.Path('D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files')
-
-com_service = RabbitMQCommunicationService()
-scanner = XRayImagesScanner(
-    com_service,
-    str(yolo_files_path.joinpath('yolov3-custom.cfg')),
-    str(yolo_files_path.joinpath('yolov3-custom_final.weights')),
-    str(yolo_files_path.joinpath('class_names.names')))
-
-def callback(message: ExitRequest):
-    exit()
-
-com_service.subscribe(ExitRequest, callback)
-
-def setup_finished_callback():
-    com_service.publish(SetupFinishedIndication(com_service.in_queue_name, com_service.launcher_queue_name))
-
-com_service.start(setup_finished_callback)
-
-
+run_python_controller()
 
 # json = "{\"name\":\"FindBonesRequest\",\"contents\":[{}]}"
 
