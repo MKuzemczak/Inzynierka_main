@@ -4,20 +4,20 @@ from python_controller.messages import BaseMessage, get_message_from_json
 
 class RabbitMQCommunicationService:
     class __RabbitMQCommunicationService:
-        _in_queue_name = "inzynierka_python"
-        _app_queue_name = "inzynierka_app"
-        _launcher_queue_name = "inzynierka_launcher"
+        in_queue_name = "inzynierka_python"
+        app_queue_name = "inzynierka_app"
+        launcher_queue_name = "inzynierka_launcher"
 
         def __init__(self):
             self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
             self.channel = self.connection.channel()
 
-            self.channel.queue_declare(queue=self._in_queue_name)
-            self.channel.queue_declare(queue=self._app_queue_name)
-            self.channel.queue_declare(queue=self._launcher_queue_name)
-            self.channel.queue_purge(queue=self._in_queue_name)
-            self.channel.queue_purge(queue=self._app_queue_name)
-            self.channel.queue_purge(queue=self._launcher_queue_name)
+            self.channel.queue_declare(queue=self.in_queue_name)
+            self.channel.queue_declare(queue=self.app_queue_name)
+            self.channel.queue_declare(queue=self.launcher_queue_name)
+            self.channel.queue_purge(queue=self.in_queue_name)
+            self.channel.queue_purge(queue=self.app_queue_name)
+            self.channel.queue_purge(queue=self.launcher_queue_name)
 
             self._message_subscriptions = {}
         
@@ -42,8 +42,9 @@ class RabbitMQCommunicationService:
             
             self._run_subscriptions(message)
 
-        def start(self):
-            self.channel.basic_consume(queue=self._in_queue_name, on_message_callback=self._callback, auto_ack=True)
+        def start(self, setup_finished_callback):
+            self.channel.basic_consume(queue=self.in_queue_name, on_message_callback=self._callback, auto_ack=True)
+            setup_finished_callback()
             self.channel.start_consuming()
 
         def subscribe(self, message_type: BaseMessage, callback_function):

@@ -17,7 +17,11 @@ def callback(message: ExitRequest):
     exit()
 
 com_service.subscribe(ExitRequest, callback)
-com_service.start()
+
+def setup_finished_callback():
+    com_service.publish(SetupFinishedIndication(com_service.in_queue_name, com_service.launcher_queue_name))
+
+com_service.start(setup_finished_callback)
 
 
 

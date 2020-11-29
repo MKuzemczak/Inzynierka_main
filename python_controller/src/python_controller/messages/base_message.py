@@ -31,4 +31,8 @@ class BaseMessage(abc.ABC):
         """
 
     def _prepare_json(self, contents: dict) -> str:
-        return json.dumps({"name": self.__class__.__name__, "contents": contents})
+        return json.dumps({
+            "name": self.__class__.__name__,
+            "sender": self.sender,
+            "receiver": self.receiver,
+            "contents": contents})
