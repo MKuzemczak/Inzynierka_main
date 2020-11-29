@@ -4,17 +4,20 @@ from python_controller.messages import BaseMessage, get_message_from_json
 
 class RabbitMQCommunicationService:
     class __RabbitMQCommunicationService:
-        _in_queue_name = "requests"
-        _out_queue_name = "results"
+        _in_queue_name = "inzynierka_python"
+        _app_queue_name = "inzynierka_app"
+        _launcher_queue_name = "inzynierka_launcher"
 
         def __init__(self):
             self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
             self.channel = self.connection.channel()
 
             self.channel.queue_declare(queue=self._in_queue_name)
-            self.channel.queue_declare(queue=self._out_queue_name)
+            self.channel.queue_declare(queue=self._app_queue_name)
+            self.channel.queue_declare(queue=self._launcher_queue_name)
             self.channel.queue_purge(queue=self._in_queue_name)
-            self.channel.queue_purge(queue=self._out_queue_name)
+            self.channel.queue_purge(queue=self._app_queue_name)
+            self.channel.queue_purge(queue=self._launcher_queue_name)
 
             self._message_subscriptions = {}
         
@@ -31,7 +34,7 @@ class RabbitMQCommunicationService:
                 subscription(message)
 
         def _callback(self, ch, method, properties, body):
-            print(body.decode())
+            print("received: " + body.decode())
             message = get_message_from_json(body.decode())
 
             if message is None:
@@ -56,7 +59,7 @@ class RabbitMQCommunicationService:
         def publish(self, message: BaseMessage):
             json_message = message.to_json()
             print("publishing message: " + json_message)
-            self.channel.basic_publish(exchange='', routing_key=self._out_queue_name, body=json_message)
+            self.channel.basic_publish(exchange='', routing_key=message.receiver, body=json_message)
 
     instance = None
     def __init__(self, *args, **kwargs):

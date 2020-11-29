@@ -22,8 +22,12 @@ com_service.start()
 
 
 # json = "{\"name\":\"FindBonesRequest\",\"contents\":[{}]}"
-# "{"name":"FindBonesRequest","contents":[{"hello": "world"}]}"
-# m = message_from_json(json)
+
+# test message:
+# {"name":"FindBonesRequest","sender":"inzynierka_app","receiver":"inzynierka_python","contents":["D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png"]}
+
+# exit message:
+# {"name":"ExitRequest","sender":"inzynierka_launcher","receiver":"inzynierka_python","contents":[]}
 
 # print(m)
 

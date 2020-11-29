@@ -30,7 +30,7 @@ class XRayImagesScanner:
 
     def _find_bones_request_callback(self, request_message):
         results = self._find_bones(request_message.image_paths)
-        result_message = FindBonesRequestResult(results)
+        result_message = FindBonesRequestResult(request_message.receiver, request_message.sender, results)
 
         self.communication_service.publish(result_message)
 
