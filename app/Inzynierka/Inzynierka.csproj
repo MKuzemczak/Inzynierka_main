@@ -149,12 +149,19 @@
     <PackageReference Include="RabbitMQ.Client">
       <Version>6.0.0</Version>
     </PackageReference>
+    <PackageReference Include="System.Text.Json">
+      <Version>5.0.0</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup>
     <PRIResource Include="Strings\en-us\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activation\ActivationHandler.cs" />
+    <Compile Include="CommunicationService\Messages\BaseMessage.cs" />
+    <Compile Include="CommunicationService\Messages\ExitRequest.cs" />
+    <Compile Include="CommunicationService\Messages\FindBonesRequest.cs" />
+    <Compile Include="CommunicationService\Messages\FindBonesRequestResult.cs" />
     <Compile Include="Controls\EditableTextBlock.xaml.cs">
       <DependentUpon>EditableTextBlock.xaml</DependentUpon>
     </Compile>
@@ -175,7 +182,7 @@
     <Compile Include="DatabaseAccess\DatabaseSimilaritygroup.cs" />
     <Compile Include="DatabaseAccess\DatabaseVirtualFolder.cs" />
     <Compile Include="Models\ModelsEventArgs\FolderItemRenamedEventArgs.cs" />
-    <Compile Include="Services\Exceptions\MainThreadDispatcherServiceNotInitialized.cs" />
+    <Compile Include="Exceptions\MainThreadDispatcherServiceNotInitializedException.cs" />
     <Compile Include="Services\ImageItemManager.cs" />
     <Compile Include="Services\MainThreadDispatcherService.cs" />
     <Compile Include="Views\Exceptions\NoParentFolderSelectedExcpetion.cs" />
@@ -185,8 +192,8 @@
     <Compile Include="Helpers\ImageNavigationHelper.cs" />
     <Compile Include="Helpers\MenuNavigationHelper.cs" />
     <Compile Include="Helpers\SettingsStorageExtensions.cs" />
-    <Compile Include="Models\ControllerTaskRequestMessage.cs" />
-    <Compile Include="Models\ControllerTaskResultMessage.cs" />
+    <Compile Include="CommunicationService\ControllerTaskRequestMessage.cs" />
+    <Compile Include="CommunicationService\ControllerTaskResultMessage.cs" />
     <Compile Include="Models\EditableTextBlockTextChangedEventArgs.cs" />
     <Compile Include="Models\FolderItemFilteredImagesProvider.cs" />
     <Compile Include="Models\ImageDataSource.cs" />
@@ -202,11 +209,11 @@
     <Compile Include="Activation\DefaultActivationHandler.cs" />
     <Compile Include="DatabaseAccess\DatabaseAccessService.cs" />
     <Compile Include="Services\AddressTaggingService.cs" />
-    <Compile Include="Services\BackendConctroller.cs" />
-    <Compile Include="Services\Exceptions.cs" />
+    <Compile Include="CommunicationService\BackendConctroller.cs" />
+    <Compile Include="Exceptions\Exceptions.cs" />
     <Compile Include="Services\FolderManagerService.cs" />
     <Compile Include="Services\NavigationService.cs" />
-    <Compile Include="Services\RabbitMQCommunicationService.cs" />
+    <Compile Include="CommunicationService\RabbitMQCommunicationService.cs" />
     <Compile Include="Models\StateMessage.cs" />
     <Compile Include="Services\StateMessagingService.cs" />
     <Compile Include="Services\ThemeSelectorService.cs" />

@@ -8,7 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.UI.Core;
 
-namespace Inzynierka.Services
+using Inzynierka.Exceptions;
+
+namespace Inzynierka.CommunicationService
 {
     public static class BackendConctroller
     {
@@ -25,10 +27,9 @@ namespace Inzynierka.Services
         // needed for marshaling calls back to UI thread
         private static CoreDispatcher _uiThreadDispatcher;
 
-        private static string OutgoingQueueName { get; set; }
-        private static string IncomingQueueName { get; set; }
-
-        private static string LauncherOutgoingQueueName { get; set; }
+        private static string PythonQueueName { get; set; } = "inzynierka_python";
+        private static string IncomingQueueName { get; set; } = "inzynierka_app";
+        private static string LauncherOutgoingQueueName { get; set; } = "inzynierka_launcher";
 
         private static Dictionary<int, ControllerTaskRequestMessage> Tasks { get; } = new Dictionary<int, ControllerTaskRequestMessage>();
 
@@ -69,10 +70,6 @@ namespace Inzynierka.Services
             if (!databaseFilePath.Any() || !Path.HasExtension(databaseFilePath))
                 throw new ArgumentException("Invalid parameter: databaseFilePath should contain a valid path.");
 
-            OutgoingQueueName = "front";
-            IncomingQueueName = "back";
-            LauncherOutgoingQueueName = "launcher";
-
             Communicator = RabbitMQCommunicationService.Instance;
             _uiThreadDispatcher = uiThreadDispatcher ?? throw new ArgumentNullException(nameof(uiThreadDispatcher));
             Communicator.Initialize(uiThreadDispatcher);
@@ -84,7 +81,7 @@ namespace Inzynierka.Services
             catch (QueueAlreadyExistsException) { }
             try
             {
-                Communicator.DeclareOutgoingQueue(OutgoingQueueName);
+                Communicator.DeclareOutgoingQueue(PythonQueueName);
             }
             catch (QueueAlreadyExistsException) { }
             try
@@ -140,7 +137,7 @@ namespace Inzynierka.Services
         {
             Tasks.Add(message.taskid, message);
             TaskCompleteActions.Add(message.taskid, actionToCallAfterComplete);
-            Communicator.Send(OutgoingQueueName, message.ToJson());
+            Communicator.Send(PythonQueueName, message.ToJson());
         }
 
         public static int CompareImages(List<ImageItem> comparedImageItems, Action<ControllerTaskResultMessage> actionToCallAfterComplete)

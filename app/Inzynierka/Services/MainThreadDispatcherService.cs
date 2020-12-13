@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.UI.Core;
 
+using Inzynierka.Exceptions;
+
 namespace Inzynierka.Services
 {
     public static class MainThreadDispatcherService
@@ -28,7 +30,7 @@ namespace Inzynierka.Services
         {
             if (!Initialized)
             {
-                throw new Exceptions.MainThreadDispatcherServiceNotInitialized();
+                throw new MainThreadDispatcherServiceNotInitializedException();
             }
 
             if (!MainThreadDispatcher.HasThreadAccess)
@@ -45,7 +47,7 @@ namespace Inzynierka.Services
         {
             if (!Initialized)
             {
-                throw new Exceptions.MainThreadDispatcherServiceNotInitialized();
+                throw new MainThreadDispatcherServiceNotInitializedException();
             }
 
             if (!MainThreadDispatcher.HasThreadAccess)

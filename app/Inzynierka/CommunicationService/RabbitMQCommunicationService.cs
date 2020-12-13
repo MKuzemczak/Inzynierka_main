@@ -9,7 +9,9 @@ using RabbitMQ.Client.Events;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 
-namespace Inzynierka.Services
+using Inzynierka.Exceptions;
+
+namespace Inzynierka.CommunicationService
 {
     public sealed class RabbitMQCommunicationService
     {

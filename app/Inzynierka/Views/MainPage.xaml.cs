@@ -7,7 +7,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
+using Inzynierka.CommunicationService;
 using Inzynierka.DatabaseAccess;
+using Inzynierka.Exceptions;
 using Inzynierka.Models;
 using Inzynierka.Services;
 
@@ -21,8 +23,17 @@ using Windows.UI.Xaml.Navigation;
 
 using WinUI = Microsoft.UI.Xaml.Controls;
 
+using System.Text.Json;
+
 namespace Inzynierka.Views
 {
+    public class Ints
+    {
+        public string a { get; set; }
+        public string b { get; set; }
+    }
+
+
     public sealed partial class MainPage : Page, INotifyPropertyChanged
     {
         private object _selectedItem;
@@ -43,11 +54,22 @@ namespace Inzynierka.Views
             InitializeComponent();
 
             SystemNavigationManagerPreview.GetForCurrentView().CloseRequested += App_CloseRequested;
+
         }
 
 
         private async void InitializeThings()
         {
+
+
+            var o = JsonSerializer.Deserialize<Ints>("{\"a\":\"10\",\"b\":\"20\"}");
+
+            var message = new MessageDialog(o.a);
+            message.Commands.Add(new UICommand("Close"));
+            message.DefaultCommandIndex = 0;
+            message.CancelCommandIndex = 0;
+            await message.ShowAsync();
+
             if (!BackendConctroller.Initialized)
             {
                 try
@@ -63,6 +85,8 @@ namespace Inzynierka.Views
                     await messageDialog.ShowAsync();
                 }
             }
+
+
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
