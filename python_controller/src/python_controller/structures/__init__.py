@@ -1,1 +1,2 @@
 from .bone_search_result import BoneSearchResult, BoneSearchResultList
+from .image_bone_search_results import ImageBoneSearchResults, ImageBoneSearchResultsList

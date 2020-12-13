@@ -2,7 +2,10 @@ import cv2
 import numpy as np
 
 from python_controller.messages import FindBonesRequest, FindBonesRequestResult
-from python_controller.structures import BoneSearchResult, BoneSearchResultList
+from python_controller.structures import BoneSearchResult
+from python_controller.structures import BoneSearchResultList
+from python_controller.structures import ImageBoneSearchResults
+from python_controller.structures import ImageBoneSearchResultsList
 
 class XRayImagesScanner:
     def __init__(
@@ -41,10 +44,12 @@ class XRayImagesScanner:
             self._classes = [str(line.strip()) for line in f.readlines()]
 
     
-    def _find_bones(self, image_paths: list = []) -> BoneSearchResultList:
+    def _find_bones(self, image_paths: list = []) -> ImageBoneSearchResultsList:
         results = []
 
         for img_path in image_paths:
+            image_results = []
+
             if img_path.endswith(".png") or img_path.endswith(".PNG"):
                 print("scanning for bones: " + img_path)
 
@@ -67,13 +72,16 @@ class XRayImagesScanner:
                         confidence = scores[class_id]
                         if confidence > 0.8:
                             print("Object detected")
-                            self._insert_bone_search_result_if_not_exists(results, BoneSearchResult(
+                            self._insert_bone_search_result_if_not_exists(image_results, BoneSearchResult(
                                 detection[0],
                                 detection[1],
                                 detection[2],
                                 detection[3],
                                 float(confidence),
                                 self._classes[class_id]))
+            
+                if len(image_results) > 0:
+                    results.append(ImageBoneSearchResults(img_path, image_results))
         
         return results
 

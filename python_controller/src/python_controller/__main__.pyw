@@ -1,4 +1,11 @@
 from .run_python_controller import run_python_controller 
+# from .structures import BoneSearchResult, ImageBoneSearchResults
+# from .messages import FindBonesRequestResult
+
+# r = ImageBoneSearchResults("path", [BoneSearchResult(1, 2, 3, 4, 5, "name1"), BoneSearchResult(1, 2, 3, 4, 5, "name2")])
+# m = FindBonesRequestResult("hehe", "hoho", [r, r])
+
+# print(m.to_json())
 
 run_python_controller()
 
