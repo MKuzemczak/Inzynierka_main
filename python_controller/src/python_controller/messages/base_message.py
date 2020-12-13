@@ -16,6 +16,13 @@ class BaseMessage(abc.ABC):
         """
             Return name of receiver (ideally name of rabbitmq queue from which receiver receives messages)
         """
+    
+    @property
+    @abc.abstractmethod
+    def request_id(self):
+        """
+            Return id of thte request (request and results messages share the same id)
+        """
 
     @abc.abstractmethod
     def to_json(self) -> str:
@@ -25,7 +32,7 @@ class BaseMessage(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_instance(cls, sender: str, receiver: str, contents: list = []):
+    def get_instance(cls, sender: str, receiver: str, request_id: int, contents: list = []):
         """
             Extracts message contents from the dict and returns an instance of the class
         """
@@ -35,4 +42,5 @@ class BaseMessage(abc.ABC):
             "name": self.__class__.__name__,
             "sender": self.sender,
             "receiver": self.receiver,
+            "request_id": self.request_id,
             "contents": contents}).replace("'", "\"")
