@@ -8,15 +8,16 @@ namespace Inzynierka.CommunicationService.Messages
 {
     public class ExitRequest : BaseMessage
     {
-        public ExitRequest(string sender, string receiver)
+        public ExitRequest(string sender, string receiver, int requestId)
         {
             Sender = sender;
             Receiver = receiver;
+            RequestId = requestId;
         }
 
         public override string ToJson()
         {
-            return PrepareJson();
+            return PrepareJson(contents: new List<int>());
         }
     }
 }

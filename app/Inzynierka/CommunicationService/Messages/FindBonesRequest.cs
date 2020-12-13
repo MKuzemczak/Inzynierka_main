@@ -11,10 +11,11 @@ namespace Inzynierka.CommunicationService.Messages
     {
         public List<string> ImagePaths { get; set; }
 
-        public FindBonesRequest(string sender, string receiver, List<string> imagePaths)
+        public FindBonesRequest(string sender, string receiver, int requestId, List<string> imagePaths)
         {
             Sender = sender;
             Receiver = receiver;
+            RequestId = requestId;
             ImagePaths = imagePaths;
         }
 

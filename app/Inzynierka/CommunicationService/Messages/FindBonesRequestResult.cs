@@ -27,10 +27,11 @@ namespace Inzynierka.CommunicationService.Messages
     {
         public List<ImageBoneSearchResults> ImagesBoneSearchResults { get; set; }
 
-        public FindBonesRequestResult(string sender, string receiver, List<ImageBoneSearchResults> imagesBoneSearchResults)
+        public FindBonesRequestResult(string sender, string receiver, int requestId, List<ImageBoneSearchResults> imagesBoneSearchResults)
         {
             Sender = sender;
             Receiver = receiver;
+            RequestId = requestId;
             ImagesBoneSearchResults = imagesBoneSearchResults;
         }
 

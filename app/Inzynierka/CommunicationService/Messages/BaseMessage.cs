@@ -19,6 +19,8 @@ namespace Inzynierka.CommunicationService.Messages
         public string Sender { get; set; }
         public string Receiver { get; set; }
 
+        public int RequestId { get; set; }
+
         public abstract string ToJson();
 
         protected string PrepareJson(object contents)

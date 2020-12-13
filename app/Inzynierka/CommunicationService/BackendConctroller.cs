@@ -8,12 +8,21 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.UI.Core;
 
+using Inzynierka.CommunicationService;
+using Inzynierka.CommunicationService.Messages;
 using Inzynierka.Exceptions;
 
 namespace Inzynierka.CommunicationService
 {
     public static class BackendConctroller
     {
+        public static Dictionary<string, Type> MessageTypeNameToType = new Dictionary<string, Type>()
+        {
+            { typeof(ExitRequest).Name, typeof(ExitRequest) },
+            { typeof(FindBonesRequest).Name, typeof(FindBonesRequest) },
+            { typeof(FindBonesRequestResult).Name, typeof(FindBonesRequestResult) }
+        };
+
         public enum TaskType : int
         {
             Initialize = 0,
