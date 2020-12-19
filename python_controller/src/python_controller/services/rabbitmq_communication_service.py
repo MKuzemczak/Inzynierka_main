@@ -1,3 +1,4 @@
+import json
 import pika
 
 from python_controller.messages import BaseMessage, get_message_from_json
@@ -7,6 +8,9 @@ class RabbitMQCommunicationService:
         in_queue_name = "inzynierka_python"
         app_queue_name = "inzynierka_app"
         launcher_queue_name = "inzynierka_launcher"
+
+        _message_class_name_json_key = "class_name"
+        _message_body_json_key = "body"
 
         def __init__(self):
             self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
@@ -34,8 +38,18 @@ class RabbitMQCommunicationService:
                 subscription(message)
 
         def _callback(self, ch, method, properties, body):
-            print("received: " + body.decode())
-            message = get_message_from_json(body.decode())
+            print("INFO: RabbitMQCommunicationService._callback: received message: " + body.decode())
+
+            data = json.loads(body.decode())
+
+            message_class_name = data.get(self._message_class_name_json_key)
+            message_body = data.get(self._message_body_json_key)
+
+            if (not message_class_name) or (not message_body):
+                print ("ERROR: RabbitMQCommunicationService._callback: invalid json structure")
+                return 
+
+            message = get_message_from_json(message_class_name, message_body)
 
             if message is None:
                 return
@@ -58,9 +72,15 @@ class RabbitMQCommunicationService:
             subscriptions.append(callback_function)
 
         def publish(self, message: BaseMessage):
-            json_message = message.to_json()
-            print("publishing message: " + json_message)
-            self.channel.basic_publish(exchange='', routing_key=message.receiver, body=json_message)
+            message_body_json = message.to_json()
+
+            sent_json = json.dumps({
+                self._message_class_name_json_key: message.__class__.__name__,
+                self._message_body_json_key: message_body_json
+            })
+
+            print("publishing message: " + sent_json)
+            self.channel.basic_publish(exchange='', routing_key=message.receiver, body=sent_json)
 
     instance = None
     def __init__(self, *args, **kwargs):
