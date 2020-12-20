@@ -159,9 +159,12 @@
   <ItemGroup>
     <Compile Include="Activation\ActivationHandler.cs" />
     <Compile Include="CommunicationService\Messages\BaseMessage.cs" />
+    <Compile Include="CommunicationService\Messages\BaseResult.cs" />
     <Compile Include="CommunicationService\Messages\ExitRequest.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequest.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequestResult.cs" />
+    <Compile Include="CommunicationService\Messages\MessageDictionary.cs" />
+    <Compile Include="CommunicationService\WrappingMessage.cs" />
     <Compile Include="Controls\EditableTextBlock.xaml.cs">
       <DependentUpon>EditableTextBlock.xaml</DependentUpon>
     </Compile>
@@ -181,10 +184,12 @@
     <Compile Include="DatabaseAccess\DatabaseImage.cs" />
     <Compile Include="DatabaseAccess\DatabaseSimilaritygroup.cs" />
     <Compile Include="DatabaseAccess\DatabaseVirtualFolder.cs" />
+    <Compile Include="CommunicationService\MessageReceivedEventArgs.cs" />
+    <Compile Include="Exceptions\MessageTypeNotFoundException.cs" />
     <Compile Include="Models\ModelsEventArgs\FolderItemRenamedEventArgs.cs" />
     <Compile Include="Exceptions\MainThreadDispatcherServiceNotInitializedException.cs" />
     <Compile Include="Services\ImageItemManager.cs" />
-    <Compile Include="Services\MainThreadDispatcherService.cs" />
+    <Compile Include="MainThreadDispatcher\MainThreadDispatcherService.cs" />
     <Compile Include="Views\Exceptions\NoParentFolderSelectedExcpetion.cs" />
     <Compile Include="Helpers\DragAndDropHelper.cs" />
     <Compile Include="Helpers\Enums.cs" />
@@ -192,8 +197,6 @@
     <Compile Include="Helpers\ImageNavigationHelper.cs" />
     <Compile Include="Helpers\MenuNavigationHelper.cs" />
     <Compile Include="Helpers\SettingsStorageExtensions.cs" />
-    <Compile Include="CommunicationService\ControllerTaskRequestMessage.cs" />
-    <Compile Include="CommunicationService\ControllerTaskResultMessage.cs" />
     <Compile Include="Models\EditableTextBlockTextChangedEventArgs.cs" />
     <Compile Include="Models\FolderItemFilteredImagesProvider.cs" />
     <Compile Include="Models\ImageDataSource.cs" />
@@ -209,13 +212,12 @@
     <Compile Include="Activation\DefaultActivationHandler.cs" />
     <Compile Include="DatabaseAccess\DatabaseAccessService.cs" />
     <Compile Include="Services\AddressTaggingService.cs" />
-    <Compile Include="CommunicationService\BackendConctroller.cs" />
     <Compile Include="Exceptions\Exceptions.cs" />
     <Compile Include="Services\FolderManagerService.cs" />
     <Compile Include="Services\NavigationService.cs" />
     <Compile Include="CommunicationService\RabbitMQCommunicationService.cs" />
     <Compile Include="Models\StateMessage.cs" />
-    <Compile Include="Services\StateMessagingService.cs" />
+    <Compile Include="StateMessaging\StateMessagingService.cs" />
     <Compile Include="Services\ThemeSelectorService.cs" />
     <Compile Include="Services\ViewLifetimeControl.cs" />
     <Compile Include="Services\WindowManagerService.cs" />

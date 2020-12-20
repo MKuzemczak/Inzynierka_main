@@ -3,41 +3,49 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Inzynierka.CommunicationService.Messages
 {
     public class BoneSearchResult
     {
-        public float x { get; set; }
-        public float y { get; set; }
-        public float w { get; set; }
-        public float h { get; set; }
-        public float confidence { get; set; }
-        public string detected_class_name { get; set; }
+        [JsonPropertyName("x")]
+        public float X { get; set; }
+
+        [JsonPropertyName("y")]
+        public float Y { get; set; }
+
+        [JsonPropertyName("w")]
+        public float W { get; set; }
+
+        [JsonPropertyName("h")]
+        public float H { get; set; }
+
+        [JsonPropertyName("confidence")]
+        public float Confidence { get; set; }
+
+        [JsonPropertyName("detected_class_name")]
+        public string DetectedClassName { get; set; }
     }
 
     public class ImageBoneSearchResults
     {
-        public string image_path { get; set; }
-        public List<BoneSearchResult> bone_search_results { get; set; }
+        [JsonPropertyName("image_path")]
+        public string ImagePath { get; set; }
+
+        [JsonPropertyName("bone_search_results")]
+        public List<BoneSearchResult> BoneSearchResults { get; set; }
     }
 
-    public class FindBonesRequestResult : BaseMessage
+    public class FindBonesRequestResult : BaseResult
     {
-        public List<ImageBoneSearchResults> ImagesBoneSearchResults { get; set; }
-
-        public FindBonesRequestResult(string sender, string receiver, int requestId, List<ImageBoneSearchResults> imagesBoneSearchResults)
-        {
-            Sender = sender;
-            Receiver = receiver;
-            RequestId = requestId;
-            ImagesBoneSearchResults = imagesBoneSearchResults;
-        }
+        [JsonPropertyName("contents")]
+        public new List<ImageBoneSearchResults> Contents { get; set; }
 
         public override string ToJson()
         {
-            return PrepareJson(ImagesBoneSearchResults);
+            return PrepareJson();
         }
     }
 

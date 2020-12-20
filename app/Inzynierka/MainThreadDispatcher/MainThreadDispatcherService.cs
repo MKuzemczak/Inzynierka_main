@@ -8,7 +8,7 @@ using Windows.UI.Core;
 
 using Inzynierka.Exceptions;
 
-namespace Inzynierka.Services
+namespace Inzynierka.MainThreadDispatcher
 {
     public static class MainThreadDispatcherService
     {

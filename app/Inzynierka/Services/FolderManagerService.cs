@@ -4,12 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Inzynierka.DatabaseAccess;
-using Inzynierka.Models;
 using Windows.Storage;
 using Windows.Storage.AccessCache;
 using Windows.Storage.Pickers;
 using Windows.Storage.Search;
+
+using Inzynierka.DatabaseAccess;
+using Inzynierka.Models;
+using Inzynierka.StateMessaging;
 
 namespace Inzynierka.Services
 {

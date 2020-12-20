@@ -12,6 +12,7 @@ using Windows.UI.Core;
 
 using Inzynierka.DatabaseAccess;
 using Inzynierka.Services;
+using Inzynierka.MainThreadDispatcher;
 using Inzynierka.Models.ModelsEventArgs;
 
 namespace Inzynierka.Models

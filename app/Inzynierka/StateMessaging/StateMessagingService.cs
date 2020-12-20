@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using Inzynierka.Models;
 
-namespace Inzynierka.Services
+namespace Inzynierka.StateMessaging
 {
     public class StateMessagingService
     {

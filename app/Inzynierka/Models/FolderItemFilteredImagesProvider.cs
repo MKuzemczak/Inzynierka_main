@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Inzynierka.DatabaseAccess;
+using Inzynierka.MainThreadDispatcher;
 using Inzynierka.Services;
 using Windows.Storage.Search;
 

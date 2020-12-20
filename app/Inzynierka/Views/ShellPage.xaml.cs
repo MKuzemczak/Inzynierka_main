@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Inzynierka.Helpers;
 using Inzynierka.Models;
 using Inzynierka.Services;
+using Inzynierka.StateMessaging;
 
 using Windows.System;
 using Windows.UI.Xaml;

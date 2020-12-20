@@ -9,19 +9,17 @@ namespace Inzynierka.CommunicationService.Messages
 {
     public class FindBonesRequest : BaseMessage
     {
-        public List<string> ImagePaths { get; set; }
-
         public FindBonesRequest(string sender, string receiver, int requestId, List<string> imagePaths)
         {
             Sender = sender;
             Receiver = receiver;
             RequestId = requestId;
-            ImagePaths = imagePaths;
+            Contents = imagePaths;
         }
 
         public override string ToJson()
         {
-            return PrepareJson(contents: JsonSerializer.Serialize(ImagePaths));
+            return PrepareJson();
         }
     }
 }

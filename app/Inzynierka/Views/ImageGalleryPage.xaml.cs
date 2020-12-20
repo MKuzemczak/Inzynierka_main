@@ -15,6 +15,7 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 
 using Inzynierka.Controls;
+using Inzynierka.MainThreadDispatcher;
 using Inzynierka.Models;
 using Inzynierka.Helpers;
 using Inzynierka.Services;

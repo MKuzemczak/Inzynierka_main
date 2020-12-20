@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 using RabbitMQ.Client;
@@ -9,12 +11,19 @@ using RabbitMQ.Client.Events;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 
+using Inzynierka.CommunicationService.Messages;
 using Inzynierka.Exceptions;
+using Inzynierka.MainThreadDispatcher;
+using Inzynierka.StateMessaging;
 
 namespace Inzynierka.CommunicationService
 {
     public sealed class RabbitMQCommunicationService
     {
+        public static string PythonQueueName = "inzynierka_python";
+        public static string IncomingQueueName = "inzynierka_app";
+        public static string LauncherQueueName = "inzynierka_launcher";
+
         public bool Initialized = false;
 
         private static RabbitMQCommunicationService m_oInstance = null;
@@ -25,9 +34,6 @@ namespace Inzynierka.CommunicationService
         private IModel ConnectionModel { get; set; }
 
         private List<string> Queues = new List<string>();
-
-        // needed for marshaling calls back to UI thread
-        private CoreDispatcher _uiThreadDispatcher;
 
         private string CurrentReceivedQueue { get; set; }
         private string CurrentReceivedMessage { get; set; }
@@ -53,26 +59,22 @@ namespace Inzynierka.CommunicationService
         {
         }
 
-        public void Initialize(CoreDispatcher uiThreadDispatcher)
+        public void Initialize()
         {
-            _uiThreadDispatcher = uiThreadDispatcher ?? throw new ArgumentNullException(nameof(uiThreadDispatcher));
-
             Factory = new ConnectionFactory() { HostName = "localhost" };
             Connection = Factory.CreateConnection();
             ConnectionModel = Connection.CreateModel();
+            DeclareOutgoingQueue(PythonQueueName);
+            DeclareOutgoingQueue(LauncherQueueName);
+            DeclareIncomingQueue(IncomingQueueName);
             Initialized = true;
         }
 
-        public void DeclareOutgoingQueue(string name)
+        private void DeclareOutgoingQueue(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Queue name should consist of non-whitespace characters", nameof(name));
-            }
-
-            if (!Initialized)
-            {
-                throw new NotInitializedException();
             }
 
             if (Queues.Contains(name))
@@ -89,13 +91,8 @@ namespace Inzynierka.CommunicationService
             CleanQueue(name);
         }
 
-        public void DeclareIncomingQueue(string name)
+        private void DeclareIncomingQueue(string name)
         {
-            if (!Initialized)
-            {
-                throw new NotInitializedException();
-            }
-
             if (Queues.Contains(name))
             {
                 throw new QueueAlreadyExistsException(name);
@@ -117,7 +114,7 @@ namespace Inzynierka.CommunicationService
 
         }
 
-        public void Send(string queue, string message)
+        public void Send(string queue, BaseMessage message)
         {
             if (!Initialized)
             {
@@ -129,7 +126,14 @@ namespace Inzynierka.CommunicationService
                 throw new QueueDoesntExistException();
             }
 
-            var body = Encoding.UTF8.GetBytes(message);
+            var messageBodyJson = message.ToJson();
+            var wrappingMessage = new WrappingMessage()
+            {
+                ClassName = message.GetType().Name,
+                Body = messageBodyJson
+            };
+            var wrappingMessageJson = JsonSerializer.Serialize(wrappingMessage);
+            var body = Encoding.UTF8.GetBytes(wrappingMessageJson);
 
             ConnectionModel.BasicPublish(exchange: "",
                 routingKey: queue,
@@ -140,14 +144,33 @@ namespace Inzynierka.CommunicationService
         private async void Receiver(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body.ToArray();
-            CurrentReceivedMessage = Encoding.ASCII.GetString(body);
-            CurrentReceivedQueue = ea.RoutingKey;
-            await _uiThreadDispatcher.RunAsync(CoreDispatcherPriority.Normal, InvokeMessageReceivedEvent);
-        }
+            string wrappingMessageJson = Encoding.ASCII.GetString(body);
+            var outerMessage = JsonSerializer.Deserialize<WrappingMessage>(wrappingMessageJson);
+            Type messageType;
+            try
+            {
+                messageType = MessageDictionary.GetTypeFromClassName(outerMessage.ClassName);
+            }
+            catch(MessageTypeNotFoundException e)
+            {
+                StateMessagingService.Instance.SendInfoMessage(e.Message, 5000);
 
-        private void InvokeMessageReceivedEvent()
-        {
-            MessageReceived(this, new MessageReceivedEventArgs(CurrentReceivedQueue, CurrentReceivedMessage));
+                return;
+            }
+
+            var deserializeMethod = typeof(JsonSerializer).GetMethod("Deserialize", new[] { typeof(string), typeof(JsonSerializerOptions) });
+            var deserializeRef = deserializeMethod.MakeGenericMethod(messageType);
+            var messageBody = deserializeRef.Invoke(null,
+                new object[]
+                {
+                    outerMessage.Body,
+                    new JsonSerializerOptions()
+                    {
+                        Converters = { new JsonStringEnumConverter() }
+                    }
+                });
+
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(() => MessageReceived.Invoke(this, new MessageReceivedEventArgs(messageBody)));
         }
 
         public void CleanQueue(string queueName)
@@ -155,17 +178,5 @@ namespace Inzynierka.CommunicationService
             ConnectionModel.QueuePurge(queueName);
         }
 
-    }
-
-    public class MessageReceivedEventArgs : EventArgs
-    {
-        public string QueueName { get; set; }
-        public string Message { get; set; }
-
-        public MessageReceivedEventArgs(string queueName, string message)
-        {
-            QueueName = queueName;
-            Message = message;
-        }
     }
 }

@@ -11,23 +11,23 @@ namespace Inzynierka.CommunicationService.Messages
 {
     public abstract class BaseMessage
     {
-        public string Name
-        {
-            get { return GetType().Name; }
-        }
-
+        [JsonPropertyName("sender")]
         public string Sender { get; set; }
+
+        [JsonPropertyName("receiver")]
         public string Receiver { get; set; }
 
+        [JsonPropertyName("request_id")]
         public int RequestId { get; set; }
+
+        [JsonPropertyName("contents")]
+        public virtual object Contents { get; set; }
 
         public abstract string ToJson();
 
-        protected string PrepareJson(object contents)
+        protected virtual string PrepareJson()
         {
-            var obj = new { name = Name, sender = Sender, receiver = Receiver, contents };
-
-            return JsonSerializer.Serialize(obj);
+            return JsonSerializer.Serialize(this);
         }
     }
 }

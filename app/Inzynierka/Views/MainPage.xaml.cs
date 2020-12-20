@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Inzynierka.CommunicationService;
 using Inzynierka.DatabaseAccess;
 using Inzynierka.Exceptions;
+using Inzynierka.MainThreadDispatcher;
 using Inzynierka.Models;
 using Inzynierka.Services;
 
@@ -60,33 +61,36 @@ namespace Inzynierka.Views
 
         private async void InitializeThings()
         {
+            //if (!BackendConctroller.Initialized)
+            //{
+            //    try
+            //    {
+            //        await BackendConctroller.Initialize(Window.Current.Dispatcher, DatabaseAccessService.DatabaseFilePath);
+            //    }
+            //    catch (BackendControllerInitializationException exception)
+            //    {
+            //        var messageDialog = new MessageDialog("Error establishing connection with python: " + exception.Message);
+            //        messageDialog.Commands.Add(new UICommand("Close"));
+            //        messageDialog.DefaultCommandIndex = 0;
+            //        messageDialog.CancelCommandIndex = 0;
+            //        await messageDialog.ShowAsync();
+            //    }
+            //}
 
+            var commInstance = RabbitMQCommunicationService.Instance;
 
-            var o = JsonSerializer.Deserialize<Ints>("{\"a\":\"10\",\"b\":\"20\"}");
-
-            var message = new MessageDialog(o.a);
-            message.Commands.Add(new UICommand("Close"));
-            message.DefaultCommandIndex = 0;
-            message.CancelCommandIndex = 0;
-            await message.ShowAsync();
-
-            if (!BackendConctroller.Initialized)
+            if (!commInstance.Initialized)
             {
-                try
-                {
-                    await BackendConctroller.Initialize(Window.Current.Dispatcher, DatabaseAccessService.DatabaseFilePath);
-                }
-                catch (BackendControllerInitializationException exception)
-                {
-                    var messageDialog = new MessageDialog("Error establishing connection with python: " + exception.Message);
-                    messageDialog.Commands.Add(new UICommand("Close"));
-                    messageDialog.DefaultCommandIndex = 0;
-                    messageDialog.CancelCommandIndex = 0;
-                    await messageDialog.ShowAsync();
-                }
+                commInstance.Initialize();
             }
 
-
+            commInstance.Send(
+                RabbitMQCommunicationService.PythonQueueName,
+                new CommunicationService.Messages.FindBonesRequest(
+                    RabbitMQCommunicationService.IncomingQueueName,
+                    RabbitMQCommunicationService.PythonQueueName,
+                    1111,
+                    new List<string> { "D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png" }));
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -129,7 +133,7 @@ namespace Inzynierka.Views
 
         private void App_CloseRequested(object sender, SystemNavigationCloseRequestedPreviewEventArgs e)
         {
-            BackendConctroller.SendCloseApp();
+            //BackendConctroller.SendCloseApp();
         }
     }
 }

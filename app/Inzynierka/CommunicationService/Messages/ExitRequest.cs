@@ -17,7 +17,7 @@ namespace Inzynierka.CommunicationService.Messages
 
         public override string ToJson()
         {
-            return PrepareJson(contents: new List<int>());
+            return PrepareJson();
         }
     }
 }
