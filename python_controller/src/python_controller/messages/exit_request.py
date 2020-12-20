@@ -1,11 +1,11 @@
-from . import BaseMessage
+from . import BaseIndication
 
-class ExitRequest(BaseMessage):
+class ExitRequest(BaseIndication):
 
-    def __init__(self, sender: str, receiver: str, request_id: int):
+    def __init__(self, sender: str, receiver: str, message_id: int):
         self._sender = sender
         self._receiver = receiver
-        self._request_id = request_id
+        self._message_id = message_id
 
     @property
     def sender(self) -> str:
@@ -16,12 +16,12 @@ class ExitRequest(BaseMessage):
         return self._receiver
     
     @property
-    def request_id(self) -> int:
-        return self._request_id
+    def message_id(self) -> int:
+        return self._message_id
 
     def to_json(self):
         return self._prepare_json([])
 
     @classmethod
-    def get_instance(cls, sender: str, receiver: str, request_id: int, contents: list = []):
-        return ExitRequest(sender, receiver, request_id)
+    def get_instance(cls, sender: str, receiver: str, message_id: int, contents: list = []):
+        return ExitRequest(sender, receiver, message_id)

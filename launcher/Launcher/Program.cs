@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Threading;
 
+using Launcher.CommunicationService;
+
 namespace Launcher
 {
     class Program
@@ -10,18 +12,29 @@ namespace Launcher
         private static string PythonQueueName { get; } = "inzynierka_python";
         private static RabbitMQCommunicationService Communicator { get; set; }
         private static AutoResetEvent AppClose = new AutoResetEvent(false);
+        private static AutoResetEvent LaunchPython = new AutoResetEvent(false);
 
         static void InitializeCommunicator()
         {
             Communicator = RabbitMQCommunicationService.Instance;
             Communicator.Initialize();
-            Communicator.DeclareIncomingQueue(IncomingQueueName);
             Communicator.MessageReceived += MessageReceiver;
         }
 
         static void Main(string[] args)
         {
             InitializeCommunicator();
+
+            Process appProcess = new Process();
+            appProcess.StartInfo.FileName = "Inzynierka.exe";
+            appProcess.StartInfo.Arguments = "";
+            appProcess.StartInfo.WindowStyle = ProcessWindowStyle.Maximized;
+
+            // Comment this line, if you want to launch piceon yourself
+            // from Visual studio
+            appProcess.Start();
+
+            LaunchPython.WaitOne();
 
             Process pythonControllerProcess = new Process();
             pythonControllerProcess.StartInfo.FileName = "pythonw";
@@ -36,24 +49,24 @@ namespace Launcher
             pythonControllerProcess.Start();
 
             AppClose.WaitOne();
+
+            Communicator.Send(
+                new CommunicationService.Messages.ExitRequest()
+                {
+                    Sender = RabbitMQCommunicationService.IncomingQueueName,
+                    Receiver = RabbitMQCommunicationService.PythonQueueName
+                });
         }
 
         private static void MessageReceiver(object sender, MessageReceivedEventArgs e)
         {
-            if (e.QueueName != IncomingQueueName)
-                return;
-
-            if (e.Message == "{\"name\": \"SetupFinishedIndication\", \"sender\": \"inzynierka_python\", \"receiver\": \"inzynierka_launcher\", \"contents\": []}")
+            if (e.Message is CommunicationService.Messages.SetupFinishedIndication)
             {
-                Process appProcess = new Process();
-                appProcess.StartInfo.FileName = "Inzynierka.exe";
-                appProcess.StartInfo.Arguments = "";
-                appProcess.StartInfo.WindowStyle = ProcessWindowStyle.Maximized;
+                LaunchPython.Set();
+            }
 
-                // Comment this line, if you want to launch piceon yourself
-                // from Visual studio
-                appProcess.Start();
-
+            if (e.Message is CommunicationService.Messages.ExitRequest)
+            {
                 AppClose.Set();
             }
 

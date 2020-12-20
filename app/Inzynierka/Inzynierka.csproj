@@ -158,12 +158,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Activation\ActivationHandler.cs" />
-    <Compile Include="CommunicationService\Messages\BaseMessage.cs" />
+    <Compile Include="CommunicationService\Messages\BaseIndication.cs" />
+    <Compile Include="CommunicationService\Messages\BaseRequest.cs" />
     <Compile Include="CommunicationService\Messages\BaseResult.cs" />
     <Compile Include="CommunicationService\Messages\ExitRequest.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequest.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequestResult.cs" />
     <Compile Include="CommunicationService\Messages\MessageDictionary.cs" />
+    <Compile Include="CommunicationService\Messages\SetupFinishedIndication.cs" />
     <Compile Include="CommunicationService\WrappingMessage.cs" />
     <Compile Include="Controls\EditableTextBlock.xaml.cs">
       <DependentUpon>EditableTextBlock.xaml</DependentUpon>

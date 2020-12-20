@@ -1,13 +1,13 @@
 import json
 
-from . import BaseMessage
+from . import BaseRequest
 
-class FindBonesRequest(BaseMessage):
+class FindBonesRequest(BaseRequest):
 
-    def __init__(self, sender: str, receiver: str, request_id: int, img_paths: list = []):
+    def __init__(self, sender: str, receiver: str, message_id: int, img_paths: list = []):
         self._sender = sender
         self._receiver = receiver
-        self._request_id = request_id
+        self._message_id = message_id
         self.image_paths = img_paths
     
     @property
@@ -22,9 +22,9 @@ class FindBonesRequest(BaseMessage):
         return self._prepare_json(self.image_paths)
 
     @property
-    def request_id(self) -> int:
-        return self._request_id
+    def message_id(self) -> int:
+        return self._message_id
 
     @classmethod
-    def get_instance(cls, sender: str, receiver: str, request_id: int, contents: list):
-        return FindBonesRequest(sender, receiver, request_id, contents)
+    def get_instance(cls, sender: str, receiver: str, message_id: int, contents: list):
+        return FindBonesRequest(sender, receiver, message_id, contents)

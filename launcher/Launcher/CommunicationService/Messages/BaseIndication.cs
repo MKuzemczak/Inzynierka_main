@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Inzynierka.CommunicationService.Messages
+namespace Launcher.CommunicationService.Messages
 {
-    public abstract class BaseMessage
+    public abstract class BaseIndication
     {
         [JsonPropertyName("sender")]
         public string Sender { get; set; }
@@ -17,11 +17,8 @@ namespace Inzynierka.CommunicationService.Messages
         [JsonPropertyName("receiver")]
         public string Receiver { get; set; }
 
-        [JsonPropertyName("request_id")]
-        public int RequestId { get; set; }
-
-        [JsonPropertyName("contents")]
-        public virtual object Contents { get; set; }
+        [JsonPropertyName("message_id")]
+        public int MessageId { get; set; }
 
         public abstract string ToJson();
 

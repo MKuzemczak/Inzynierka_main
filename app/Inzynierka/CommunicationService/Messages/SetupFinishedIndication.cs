@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Inzynierka.CommunicationService.Messages
 {
-    public class ExitRequest : BaseIndication
+    public class SetupFinishedIndication : BaseIndication
     {
         public override string ToJson()
         {

@@ -1,4 +1,4 @@
-from . import BaseMessage, BaseResult, ResultMessageStatus
+from . import BaseRequest, BaseResult, ResultMessageStatus
 from python_controller.structures import ImageBoneSearchResults, ImageBoneSearchResultsList
 
 class FindBonesRequestResult(BaseResult):
@@ -6,13 +6,13 @@ class FindBonesRequestResult(BaseResult):
         self,
         sender: str,
         receiver: str,
-        request_id: int,
+        message_id: int,
         status: ResultMessageStatus,
         image_bone_search_results: ImageBoneSearchResultsList = []
     ):
         self._sender = sender
         self._receiver = receiver
-        self._request_id = request_id
+        self._message_id = message_id
         self._status = status
         self.image_bone_search_results = image_bone_search_results
 
@@ -28,8 +28,8 @@ class FindBonesRequestResult(BaseResult):
         return self._receiver
 
     @property
-    def request_id(self) -> int:
-        return self._request_id
+    def message_id(self) -> int:
+        return self._message_id
 
     @property
     def status(self) -> ResultMessageStatus:
@@ -39,11 +39,11 @@ class FindBonesRequestResult(BaseResult):
         return self._prepare_json([results.dict() for results in self.image_bone_search_results])
 
     @classmethod
-    def get_instance(cls, sender: str, receiver: str, request_id: int, status: ResultMessageStatus, contents: list):
+    def get_instance(cls, sender: str, receiver: str, message_id: int, status: ResultMessageStatus, contents: list):
         return FindBonesRequestResult(
             sender,
             receiver,
-            request_id,
+            message_id,
             status,
             [ImageBoneSearchResults(**data_dict) for data_dict in contents]
         )

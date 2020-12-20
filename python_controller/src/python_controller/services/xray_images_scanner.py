@@ -36,7 +36,7 @@ class XRayImagesScanner:
         result_message = FindBonesRequestResult(
             request_message.receiver,
             request_message.sender,
-            request_message.request_id,
+            request_message.message_id,
             ResultMessageStatus.Success,
             results
         )

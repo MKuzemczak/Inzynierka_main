@@ -85,12 +85,13 @@ namespace Inzynierka.Views
             }
 
             commInstance.Send(
-                RabbitMQCommunicationService.PythonQueueName,
-                new CommunicationService.Messages.FindBonesRequest(
-                    RabbitMQCommunicationService.IncomingQueueName,
-                    RabbitMQCommunicationService.PythonQueueName,
+                new CommunicationService.Messages.SetupFinishedIndication()
+                {
+                    Sender = RabbitMQCommunicationService.IncomingQueueName,
+                    Receiver = RabbitMQCommunicationService.LauncherQueueName/*,
                     1111,
-                    new List<string> { "D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png" }));
+                    new List<string> { "D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png" }*/
+                });
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -133,6 +134,11 @@ namespace Inzynierka.Views
 
         private void App_CloseRequested(object sender, SystemNavigationCloseRequestedPreviewEventArgs e)
         {
+            RabbitMQCommunicationService.Instance.Send(new CommunicationService.Messages.ExitRequest()
+            {
+                Sender = RabbitMQCommunicationService.IncomingQueueName,
+                Receiver = RabbitMQCommunicationService.LauncherQueueName
+            });
             //BackendConctroller.SendCloseApp();
         }
     }

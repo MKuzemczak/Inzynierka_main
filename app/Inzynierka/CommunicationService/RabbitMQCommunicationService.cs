@@ -114,14 +114,14 @@ namespace Inzynierka.CommunicationService
 
         }
 
-        public void Send(string queue, BaseMessage message)
+        public void Send(BaseIndication message)
         {
             if (!Initialized)
             {
                 throw new NotInitializedException();
             }
 
-            if (!Queues.Contains(queue))
+            if (!Queues.Contains(message.Receiver))
             {
                 throw new QueueDoesntExistException();
             }
@@ -136,7 +136,7 @@ namespace Inzynierka.CommunicationService
             var body = Encoding.UTF8.GetBytes(wrappingMessageJson);
 
             ConnectionModel.BasicPublish(exchange: "",
-                routingKey: queue,
+                routingKey: message.Receiver,
                 basicProperties: null,
                 body: body);
         }
@@ -170,7 +170,7 @@ namespace Inzynierka.CommunicationService
                     }
                 });
 
-            await MainThreadDispatcherService.MarshalToMainThreadAsync(() => MessageReceived.Invoke(this, new MessageReceivedEventArgs(messageBody)));
+            await MainThreadDispatcherService.MarshalToMainThreadAsync(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(messageBody)));
         }
 
         public void CleanQueue(string queueName)

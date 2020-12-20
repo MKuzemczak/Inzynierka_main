@@ -1,14 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Launcher
+using Launcher.CommunicationService.Messages;
+using Launcher.Exceptions;
+
+namespace Launcher.CommunicationService
 {
     public sealed class RabbitMQCommunicationService
     {
+        public static string PythonQueueName = "inzynierka_python";
+        public static string AppQueueName = "inzynierka_app";
+        public static string IncomingQueueName = "inzynierka_launcher";
+
         public bool Initialized = false;
 
         private static RabbitMQCommunicationService m_oInstance = null;
@@ -49,24 +60,22 @@ namespace Launcher
             Factory = new ConnectionFactory() { HostName = "localhost" };
             Connection = Factory.CreateConnection();
             ConnectionModel = Connection.CreateModel();
+            DeclareOutgoingQueue(PythonQueueName);
+            DeclareOutgoingQueue(AppQueueName);
+            DeclareIncomingQueue(IncomingQueueName);
             Initialized = true;
         }
 
-        public void DeclareOutgoingQueue(string name)
+        private void DeclareOutgoingQueue(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
                 throw new ArgumentException("Queue name should consist of non-whitespace characters", nameof(name));
             }
 
-            if (!Initialized)
-            {
-                throw new NotInitializedException();
-            }
-
             if (Queues.Contains(name))
             {
-                throw new QueueAlreadyExistsException();
+                throw new QueueAlreadyExistsException(name);
             }
 
             ConnectionModel.QueueDeclare(queue: name,
@@ -78,16 +87,11 @@ namespace Launcher
             CleanQueue(name);
         }
 
-        public void DeclareIncomingQueue(string name)
+        private void DeclareIncomingQueue(string name)
         {
-            if (!Initialized)
-            {
-                throw new NotInitializedException();
-            }
-
             if (Queues.Contains(name))
             {
-                throw new QueueAlreadyExistsException();
+                throw new QueueAlreadyExistsException(name);
             }
 
             ConnectionModel.QueueDeclare(queue: name,
@@ -106,22 +110,29 @@ namespace Launcher
 
         }
 
-        public void Send(string queue, string message)
+        public void Send(BaseIndication message)
         {
             if (!Initialized)
             {
                 throw new NotInitializedException();
             }
 
-            if (!Queues.Contains(queue))
+            if (!Queues.Contains(message.Receiver))
             {
                 throw new QueueDoesntExistException();
             }
 
-            var body = Encoding.UTF8.GetBytes(message);
+            var messageBodyJson = message.ToJson();
+            var wrappingMessage = new WrappingMessage()
+            {
+                ClassName = message.GetType().Name,
+                Body = messageBodyJson
+            };
+            var wrappingMessageJson = JsonSerializer.Serialize(wrappingMessage);
+            var body = Encoding.UTF8.GetBytes(wrappingMessageJson);
 
             ConnectionModel.BasicPublish(exchange: "",
-                routingKey: queue,
+                routingKey: message.Receiver,
                 basicProperties: null,
                 body: body);
         }
@@ -129,27 +140,39 @@ namespace Launcher
         private void Receiver(object model, BasicDeliverEventArgs ea)
         {
             var body = ea.Body.ToArray();
-            CurrentReceivedMessage = Encoding.ASCII.GetString(body);
-            CurrentReceivedQueue = ea.RoutingKey;
-            MessageReceived(this, new MessageReceivedEventArgs(CurrentReceivedQueue, CurrentReceivedMessage));
+            string wrappingMessageJson = Encoding.ASCII.GetString(body);
+            var outerMessage = JsonSerializer.Deserialize<WrappingMessage>(wrappingMessageJson);
+            Type messageType;
+            try
+            {
+                messageType = MessageDictionary.GetTypeFromClassName(outerMessage.ClassName);
+            }
+            catch(MessageTypeNotFoundException e)
+            {
+                Console.WriteLine($"ERROR: RabbitMQCommunicationService.Receiver: {e.Message}");
+
+                return;
+            }
+
+            var deserializeMethod = typeof(JsonSerializer).GetMethod("Deserialize", new[] { typeof(string), typeof(JsonSerializerOptions) });
+            var deserializeRef = deserializeMethod.MakeGenericMethod(messageType);
+            var messageBody = deserializeRef.Invoke(null,
+                new object[]
+                {
+                    outerMessage.Body,
+                    new JsonSerializerOptions()
+                    {
+                        Converters = { new JsonStringEnumConverter() }
+                    }
+                });
+
+            MessageReceived.Invoke(this, new MessageReceivedEventArgs(messageBody));
         }
 
-        private void CleanQueue(string queueName)
+        public void CleanQueue(string queueName)
         {
             ConnectionModel.QueuePurge(queueName);
         }
 
-    }
-
-    public class MessageReceivedEventArgs : EventArgs
-    {
-        public string QueueName { get; set; }
-        public string Message { get; set; }
-
-        public MessageReceivedEventArgs(string queueName, string message)
-        {
-            QueueName = queueName;
-            Message = message;
-        }
     }
 }

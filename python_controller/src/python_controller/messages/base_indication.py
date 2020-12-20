@@ -1,7 +1,7 @@
 import abc
 import json
 
-class BaseMessage(abc.ABC):
+class BaseIndication(abc.ABC):
 
     @property
     @abc.abstractmethod
@@ -19,7 +19,7 @@ class BaseMessage(abc.ABC):
     
     @property
     @abc.abstractmethod
-    def request_id(self):
+    def message_id(self):
         """
             Return id of thte request (request and results messages share the same id)
         """
@@ -32,14 +32,13 @@ class BaseMessage(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def get_instance(cls, sender: str, receiver: str, request_id: int, contents: list = []):
+    def get_instance(cls, sender: str, receiver: str, message_id: int):
         """
-            Extracts message contents from the dict and returns an instance of the class
+            Returns an instance of the class
         """
 
-    def _prepare_json(self, contents: dict) -> str:
+    def _prepare_json(self) -> str:
         return str({
             "sender": self.sender,
             "receiver": self.receiver,
-            "request_id": self.request_id,
-            "contents": contents}).replace("'", "\"")
+            "message_id": self.message_id}).replace("'", "\"")

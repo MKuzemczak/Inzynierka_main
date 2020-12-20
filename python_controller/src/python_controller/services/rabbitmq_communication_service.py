@@ -1,7 +1,7 @@
 import json
 import pika
 
-from python_controller.messages import BaseMessage, get_message_from_json
+from python_controller.messages import BaseRequest, get_message_from_json
 
 class RabbitMQCommunicationService:
     class __RabbitMQCommunicationService:
@@ -61,7 +61,7 @@ class RabbitMQCommunicationService:
             setup_finished_callback()
             self.channel.start_consuming()
 
-        def subscribe(self, message_type: BaseMessage, callback_function):
+        def subscribe(self, message_type: BaseRequest, callback_function):
             message_type_name = message_type.__name__
             subscriptions = self._message_subscriptions.get(message_type_name)
 
@@ -71,7 +71,7 @@ class RabbitMQCommunicationService:
             
             subscriptions.append(callback_function)
 
-        def publish(self, message: BaseMessage):
+        def publish(self, message: BaseRequest):
             message_body_json = message.to_json()
 
             sent_json = json.dumps({

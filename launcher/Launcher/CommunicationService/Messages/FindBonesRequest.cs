@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Inzynierka.CommunicationService.Messages
+namespace Launcher.CommunicationService.Messages
 {
     public class FindBonesRequest : BaseRequest
     {

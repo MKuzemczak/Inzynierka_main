@@ -19,21 +19,14 @@ def get_message_from_json(message_class_name: str, message_body_json_str: str):
         print("ERROR: get_message_from_json: invalid message_class_name")
 
     data = json.loads(message_body_json_str)
-    sender = data.get("sender")
-    receiver = data.get("receiver")
-    request_id = data.get("request_id")
-    contents = data.get("contents")
+    # sender = data.get("sender")
+    # receiver = data.get("receiver")
+    # message_id = data.get("message_id")
 
-    print(sender)
-    print(receiver)
-    print(request_id)
-    print(contents)
+    # if not (sender is not None
+    #         and receiver is not None
+    #         and message_id is not None):
+    #     print("ERROR: get_message_from_json: Invalid message structure")
+    #     return None
 
-    if not (sender is not None
-            and receiver is not None
-            and request_id is not None
-            and contents is not None):
-        print("ERROR: get_message_from_json: Invalid message structure")
-        return None
-
-    return message_name_to_cls[message_class_name].get_instance(sender, receiver, request_id, contents)
+    return message_name_to_cls[message_class_name](**data)

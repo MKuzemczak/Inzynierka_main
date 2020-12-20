@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Inzynierka.CommunicationService.Messages
+namespace Launcher.CommunicationService.Messages
 {
     public enum ResultStatus
     {

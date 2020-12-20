@@ -1,19 +1,15 @@
 import abc
+import json
 
-from enum import Enum
+from . import BaseIndication
 
-from . import BaseRequest
+class BaseRequest(BaseIndication):
 
-class ResultMessageStatus(Enum):
-    Failed = 0
-    Success = 0
-
-class BaseResult(BaseRequest):
-    @property
+    @classmethod
     @abc.abstractmethod
-    def status(self):
+    def get_instance(cls, sender: str, receiver: str, message_id: int, contents: list = []):
         """
-            Return result message status of enum value: Failed, Success
+            Extracts message contents from the dict and returns an instance of the class
         """
 
     def _prepare_json(self, contents: dict) -> str:
@@ -21,5 +17,4 @@ class BaseResult(BaseRequest):
             "sender": self.sender,
             "receiver": self.receiver,
             "message_id": self.message_id,
-            "status": self.status.name,
             "contents": contents}).replace("'", "\"")
