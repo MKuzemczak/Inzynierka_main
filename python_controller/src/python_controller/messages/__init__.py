@@ -1,4 +1,5 @@
 from .base_message import BaseMessage
+from .base_result import BaseResult, ResultMessageStatus
 from .exit_request import ExitRequest
 from .find_bones_request import FindBonesRequest
 from .find_bones_request_result import FindBonesRequestResult

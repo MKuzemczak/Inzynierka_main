@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from python_controller.messages import FindBonesRequest, FindBonesRequestResult
+from python_controller.messages import FindBonesRequest, FindBonesRequestResult, ResultMessageStatus
 from python_controller.structures import BoneSearchResult
 from python_controller.structures import BoneSearchResultList
 from python_controller.structures import ImageBoneSearchResults
@@ -37,6 +37,7 @@ class XRayImagesScanner:
             request_message.receiver,
             request_message.sender,
             request_message.request_id,
+            ResultMessageStatus.Success,
             results
         )
 
