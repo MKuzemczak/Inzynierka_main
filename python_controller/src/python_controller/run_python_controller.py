@@ -14,13 +14,14 @@ def run_python_controller():
         str(yolo_files_path.joinpath('yolov3-custom_final.weights')),
         str(yolo_files_path.joinpath('class_names.names')))
 
-    def callback(message: ExitRequest):
+    def callback(message: ExitIndication):
         exit()
 
-    com_service.subscribe(ExitRequest, callback)
+    com_service.subscribe(ExitIndication, callback)
 
     def setup_finished_callback():
-        com_service.publish(SetupFinishedIndication(com_service.in_queue_name, com_service.launcher_queue_name))
+        com_service.publish(PythonSetupFinishedIndication(com_service.in_queue_name, com_service.launcher_queue_name))
+        com_service.publish(PythonSetupFinishedIndication(com_service.in_queue_name, com_service.app_queue_name))
 
     com_service.start(setup_finished_callback)
 
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 # {"name":"FindBonesRequest","sender":"inzynierka_app","receiver":"inzynierka_python","contents":["D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png"]}
 
 # exit message:
-# {"name":"ExitRequest","sender":"inzynierka_launcher","receiver":"inzynierka_python","contents":[]}
+# {"name":"ExitIndication","sender":"inzynierka_launcher","receiver":"inzynierka_python","contents":[]}
 
 # print(m)
 

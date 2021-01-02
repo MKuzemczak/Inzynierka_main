@@ -1,6 +1,6 @@
 from . import BaseIndication
 
-class ExitRequest(BaseIndication):
+class ExitIndication(BaseIndication):
 
     def __init__(self, sender: str, receiver: str, message_id: int):
         self._sender = sender
@@ -24,4 +24,4 @@ class ExitRequest(BaseIndication):
 
     @classmethod
     def get_instance(cls, sender: str, receiver: str, message_id: int, contents: list = []):
-        return ExitRequest(sender, receiver, message_id)
+        return ExitIndication(sender, receiver, message_id)

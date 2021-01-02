@@ -1,13 +1,13 @@
 import json
 
-from . import ExitRequest, FindBonesRequest, FindBonesRequestResult, SetupFinishedIndication
+from . import ExitIndication, FindBonesRequest, FindBonesRequestResult, PythonSetupFinishedIndication
 
 
 message_name_to_cls = {
-    ExitRequest.__name__: ExitRequest,
+    ExitIndication.__name__: ExitIndication,
     FindBonesRequest.__name__: FindBonesRequest,
     FindBonesRequestResult.__name__: FindBonesRequestResult,
-    SetupFinishedIndication.__name__: SetupFinishedIndication
+    PythonSetupFinishedIndication.__name__: PythonSetupFinishedIndication
 }
 
 

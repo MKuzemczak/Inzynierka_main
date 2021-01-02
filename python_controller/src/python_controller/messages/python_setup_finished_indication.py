@@ -1,6 +1,6 @@
 from . import BaseIndication
 
-class SetupFinishedIndication(BaseIndication):
+class PythonSetupFinishedIndication(BaseIndication):
 
     def __init__(self, sender: str, receiver: str, message_id: int = 0):
         self._sender = sender
@@ -24,4 +24,4 @@ class SetupFinishedIndication(BaseIndication):
 
     @classmethod
     def get_instance(cls, sender: str, receiver: str, message_id: int):
-        return SetupFinishedIndication(sender, receiver, message_id)
+        return PythonSetupFinishedIndication(sender, receiver, message_id)
