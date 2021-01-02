@@ -84,11 +84,12 @@
     <Compile Include="CommunicationService\Messages\BaseIndication.cs" />
     <Compile Include="CommunicationService\Messages\BaseRequest.cs" />
     <Compile Include="CommunicationService\Messages\BaseResult.cs" />
-    <Compile Include="CommunicationService\Messages\ExitRequest.cs" />
+    <Compile Include="CommunicationService\Messages\ExitIndication.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequest.cs" />
     <Compile Include="CommunicationService\Messages\FindBonesRequestResult.cs" />
     <Compile Include="CommunicationService\Messages\MessageDictionary.cs" />
-    <Compile Include="CommunicationService\Messages\SetupFinishedIndication.cs" />
+    <Compile Include="CommunicationService\Messages\AppSetupFinishedIndication.cs" />
+    <Compile Include="CommunicationService\Messages\PythonSetupFinishedIndication.cs" />
     <Compile Include="CommunicationService\RabbitMQCommunicationService.cs" />
     <Compile Include="CommunicationService\WrappingMessage.cs" />
     <Compile Include="Exceptions\Exceptions.cs" />

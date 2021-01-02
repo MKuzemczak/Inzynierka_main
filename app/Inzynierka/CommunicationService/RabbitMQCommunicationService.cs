@@ -35,10 +35,9 @@ namespace Inzynierka.CommunicationService
 
         private List<string> Queues = new List<string>();
 
-        private string CurrentReceivedQueue { get; set; }
-        private string CurrentReceivedMessage { get; set; }
-
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        private Dictionary<string, List<Action<BaseIndication>>> MessageNameToCallbacks = new Dictionary<string, List<Action<BaseIndication>>>();
 
         public static RabbitMQCommunicationService Instance
         {
@@ -67,6 +66,12 @@ namespace Inzynierka.CommunicationService
             DeclareOutgoingQueue(PythonQueueName);
             DeclareOutgoingQueue(LauncherQueueName);
             DeclareIncomingQueue(IncomingQueueName);
+
+            foreach (string key in MessageDictionary.MessageClassNameToType.Keys)
+            {
+                MessageNameToCallbacks.Add(key, new List<Action<BaseIndication>>());
+            }
+
             Initialized = true;
         }
 
@@ -170,7 +175,22 @@ namespace Inzynierka.CommunicationService
                     }
                 });
 
+            foreach (var callback in MessageNameToCallbacks[outerMessage.ClassName])
+            {
+                callback(messageBody as BaseIndication);
+            }
+
             await MainThreadDispatcherService.MarshalToMainThreadAsync(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(messageBody)));
+        }
+
+        public void Subscribe(string messageName, Action<BaseIndication> callback)
+        {
+            if (!MessageDictionary.MessageClassNameToType.Keys.Contains(messageName))
+            {
+                throw new MessageTypeNotFoundException();
+            }
+
+            MessageNameToCallbacks[messageName].Add(callback);
         }
 
         public void CleanQueue(string queueName)

@@ -12,9 +12,11 @@ namespace Inzynierka.CommunicationService.Messages
     {
         public static Dictionary<string, Type> MessageClassNameToType = new Dictionary<string, Type>()
         {
-            { typeof(ExitRequest).Name, typeof(ExitRequest) },
+            { typeof(AppSetupFinishedIndication).Name, typeof(AppSetupFinishedIndication) },
+            { typeof(ExitIndication).Name, typeof(ExitIndication) },
             { typeof(FindBonesRequest).Name, typeof(FindBonesRequest) },
-            { typeof(FindBonesRequestResult).Name, typeof(FindBonesRequestResult) }
+            { typeof(FindBonesRequestResult).Name, typeof(FindBonesRequestResult) },
+            { typeof(PythonSetupFinishedIndication).Name, typeof(PythonSetupFinishedIndication) }
         };
 
         public static Type GetTypeFromClassName(string name)

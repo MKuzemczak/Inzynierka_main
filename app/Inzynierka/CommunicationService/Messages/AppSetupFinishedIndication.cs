@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Launcher.CommunicationService.Messages
+namespace Inzynierka.CommunicationService.Messages
 {
-    public class SetupFinishedIndication : BaseIndication
+    public class AppSetupFinishedIndication : BaseIndication
     {
         public override string ToJson()
         {

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
 
 using Inzynierka.CommunicationService;
 using Inzynierka.DatabaseAccess;
@@ -37,6 +38,8 @@ namespace Inzynierka.Views
 
     public sealed partial class MainPage : Page, INotifyPropertyChanged
     {
+        private bool _pythonSetupFinished = false;
+
         private object _selectedItem;
 
         public object SelectedItem
@@ -46,6 +49,8 @@ namespace Inzynierka.Views
         }
         
         public ObservableCollection<FolderItem> Directories { get; } = new ObservableCollection<FolderItem>();
+
+        private StateMessage _launchingPythonMessage { get; set; }
 
 
         public MainPage()
@@ -84,14 +89,23 @@ namespace Inzynierka.Views
                 commInstance.Initialize();
             }
 
+            commInstance.Subscribe(typeof(CommunicationService.Messages.PythonSetupFinishedIndication).Name, PythonSetupFinishedCallback);
+
+            _launchingPythonMessage = StateMessaging.StateMessagingService.Instance.SendLoadingMessage("Launching Python...");
+
             commInstance.Send(
-                new CommunicationService.Messages.SetupFinishedIndication()
+                new CommunicationService.Messages.AppSetupFinishedIndication()
                 {
                     Sender = RabbitMQCommunicationService.IncomingQueueName,
                     Receiver = RabbitMQCommunicationService.LauncherQueueName/*,
                     1111,
                     new List<string> { "D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png" }*/
                 });
+
+            var pythonSetupTimer = new System.Timers.Timer(3000);
+            pythonSetupTimer.Elapsed += OnPythonSetupTimerElapsed;
+            pythonSetupTimer.AutoReset = false;
+            pythonSetupTimer.Enabled = true;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -134,12 +148,39 @@ namespace Inzynierka.Views
 
         private void App_CloseRequested(object sender, SystemNavigationCloseRequestedPreviewEventArgs e)
         {
-            RabbitMQCommunicationService.Instance.Send(new CommunicationService.Messages.ExitRequest()
+            RabbitMQCommunicationService.Instance.Send(new CommunicationService.Messages.ExitIndication()
             {
                 Sender = RabbitMQCommunicationService.IncomingQueueName,
                 Receiver = RabbitMQCommunicationService.LauncherQueueName
             });
-            //BackendConctroller.SendCloseApp();
+        }
+
+        private void PythonSetupFinishedCallback(CommunicationService.Messages.BaseIndication message)
+        {
+            _pythonSetupFinished = true;
+        }
+
+        private async void OnPythonSetupTimerElapsed(Object source, ElapsedEventArgs e)
+        {
+            await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () =>
+            {
+                StateMessaging.StateMessagingService.Instance.RemoveMessage(_launchingPythonMessage);
+
+                if (!_pythonSetupFinished)
+                {
+                    StateMessaging.StateMessagingService.Instance.SendInfoMessage("Failed to launch python. Restart the app.", 2000);
+
+                    var messageDialog = new MessageDialog("Failed to launch python. Restart the app.");
+                    messageDialog.Commands.Add(new UICommand("Close"));
+                    messageDialog.DefaultCommandIndex = 0;
+                    messageDialog.CancelCommandIndex = 0;
+                    await messageDialog.ShowAsync();
+
+                    return;
+                }
+
+                StateMessaging.StateMessagingService.Instance.SendInfoMessage("Python launched", 2000);
+            });
         }
     }
 }

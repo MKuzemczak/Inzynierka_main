@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Inzynierka.CommunicationService.Messages
+namespace Launcher.CommunicationService.Messages
 {
-    public class ExitRequest : BaseIndication
+    public class PythonSetupFinishedIndication : BaseIndication
     {
         public override string ToJson()
         {

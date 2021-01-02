@@ -51,7 +51,7 @@ namespace Launcher
             AppClose.WaitOne();
 
             Communicator.Send(
-                new CommunicationService.Messages.ExitRequest()
+                new CommunicationService.Messages.ExitIndication()
                 {
                     Sender = RabbitMQCommunicationService.IncomingQueueName,
                     Receiver = RabbitMQCommunicationService.PythonQueueName
@@ -60,12 +60,12 @@ namespace Launcher
 
         private static void MessageReceiver(object sender, MessageReceivedEventArgs e)
         {
-            if (e.Message is CommunicationService.Messages.SetupFinishedIndication)
+            if (e.Message is CommunicationService.Messages.AppSetupFinishedIndication)
             {
                 LaunchPython.Set();
             }
 
-            if (e.Message is CommunicationService.Messages.ExitRequest)
+            if (e.Message is CommunicationService.Messages.ExitIndication)
             {
                 AppClose.Set();
             }
