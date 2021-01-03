@@ -4,11 +4,11 @@ from . import BaseRequest
 
 class FindBonesRequest(BaseRequest):
 
-    def __init__(self, sender: str, receiver: str, message_id: int, img_paths: list = []):
+    def __init__(self, sender: str, receiver: str, message_id: int, contents: list = []):
         self._sender = sender
         self._receiver = receiver
         self._message_id = message_id
-        self.image_paths = img_paths
+        self.image_paths = contents
     
     @property
     def sender(self) -> str:

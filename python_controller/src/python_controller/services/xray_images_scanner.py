@@ -32,6 +32,9 @@ class XRayImagesScanner:
         print("setup finished")
 
     def _find_bones_request_callback(self, request_message):
+        print("INFO: searching for bones in images: ")
+        print(request_message.image_paths)
+
         results = self._find_bones(request_message.image_paths)
         result_message = FindBonesRequestResult(
             request_message.receiver,
@@ -76,8 +79,8 @@ class XRayImagesScanner:
                         scores = detection[5:]
                         class_id = np.argmax(scores)
                         confidence = scores[class_id]
-                        if confidence > 0.8:
-                            print("Object detected")
+                        if confidence > 0.1:
+                            print(self._classes[class_id] + " detected, confidence: " + str(confidence))
                             self._insert_bone_search_result_if_not_exists(image_results, BoneSearchResult(
                                 detection[0],
                                 detection[1],
@@ -92,8 +95,8 @@ class XRayImagesScanner:
         return results
 
     def _insert_bone_search_result_if_not_exists(self, result_list: BoneSearchResultList, result: BoneSearchResult):
-        location_offset = 0.01
-        size_offset = 0.01
+        location_offset = 0.1
+        size_offset = 0.1
 
         for i in range(len(result_list)):
             pivot = result_list[i]
@@ -102,9 +105,9 @@ class XRayImagesScanner:
                 continue
             
             if (abs(result.x - pivot.x) < location_offset
-                    and abs(result.y - pivot.y) < location_offset):
-                    # and abs(result.w - pivot.w) < size_offset
-                    # and abs(result.h - pivot.h) < size_offset):
+                    and abs(result.y - pivot.y) < location_offset
+                    and abs(result.w - pivot.w) < size_offset
+                    and abs(result.h - pivot.h) < size_offset):
                 if result.confidence > pivot.confidence:
                     result_list.remove(pivot)
                     break
