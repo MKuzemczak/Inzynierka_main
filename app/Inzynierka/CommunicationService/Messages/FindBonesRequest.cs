@@ -19,7 +19,7 @@ namespace Inzynierka.CommunicationService.Messages
 
         public override string ToJson()
         {
-            return PrepareJson();
+            return PrepareJson(this);
         }
     }
 }

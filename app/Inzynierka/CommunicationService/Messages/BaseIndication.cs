@@ -22,9 +22,9 @@ namespace Inzynierka.CommunicationService.Messages
 
         public abstract string ToJson();
 
-        protected virtual string PrepareJson()
+        protected virtual string PrepareJson(object serializable)
         {
-            return JsonSerializer.Serialize(this);
+            return JsonSerializer.Serialize(serializable);
         }
     }
 }

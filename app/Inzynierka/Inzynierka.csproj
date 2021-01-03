@@ -193,6 +193,7 @@
     <Compile Include="Exceptions\MainThreadDispatcherServiceNotInitializedException.cs" />
     <Compile Include="Services\ImageItemManager.cs" />
     <Compile Include="MainThreadDispatcher\MainThreadDispatcherService.cs" />
+    <Compile Include="Services\XRayProcessor.cs" />
     <Compile Include="Views\Exceptions\NoParentFolderSelectedExcpetion.cs" />
     <Compile Include="Helpers\DragAndDropHelper.cs" />
     <Compile Include="Helpers\Enums.cs" />

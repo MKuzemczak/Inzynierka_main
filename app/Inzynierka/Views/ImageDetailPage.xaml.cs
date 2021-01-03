@@ -16,12 +16,18 @@ using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Shapes;
 
 using Inzynierka.Models;
 using Inzynierka.Services;
 using Inzynierka.Helpers;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+
+using Inzynierka.CommunicationService;
+using Inzynierka.CommunicationService.Messages;
+using Inzynierka.MainThreadDispatcher;
+using Inzynierka.StateMessaging;
 
 namespace Inzynierka.Views
 {
@@ -40,6 +46,7 @@ namespace Inzynierka.Views
         private List<ImageItem> ImageData { get; set; } = new List<ImageItem>();
         private CancellationTokenSource FlipCancellationTokenSource;
         private CancellationToken FlipCancellationToken;
+        private readonly XRayProcessor xRayProcessor = new XRayProcessor();
 
         public ImageDetailPage()
         {
@@ -159,5 +166,47 @@ namespace Inzynierka.Views
         }
 
         private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+
+        private async void tmpButton_Click(object sender, RoutedEventArgs e)
+        {
+            await xRayProcessor.FindBonesAsync(CurrentlyDisplayedImageItem, FindBonesRequestResultCallback);
+        }
+
+        private void FindBonesRequestResultCallback(ImageItem requestedImageItem, List<ImageBoneSearchResults> results)
+        {
+            if (requestedImageItem != CurrentlyDisplayedImageItem)
+                return;
+
+            foreach (var result in results[0].BoneSearchResults)
+            {
+                var rect = new Rectangle()
+                {
+                    Translation = new System.Numerics.Vector3(
+                        (float)((float)(result.X * displayedImage.ActualWidth) - (displayedImage.ActualWidth / 2)),
+                        (float)((float)(result.Y * displayedImage.ActualHeight) - (displayedImage.ActualHeight / 2)),
+                        0),
+                    Width = result.W * displayedImage.ActualWidth,
+                    Height = result.H * displayedImage.ActualHeight,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Fill = new SolidColorBrush(Windows.UI.Color.FromArgb(10, 0, 255, 0)),
+                    Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 255, 0))
+                };
+
+                ToolTipService.SetToolTip(rect, new ToolTip()
+                {
+                    Content = result.DetectedClassName
+                });
+
+                Grid.SetColumn(rect, 1);
+
+                innerGrid.Children.Add(rect);
+            }
+        }
+
+        private void clrButton_Click(object sender, RoutedEventArgs e)
+        {
+            innerGrid.Children.Clear();
+        }
     }
 }

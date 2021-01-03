@@ -132,6 +132,7 @@ namespace Inzynierka.CommunicationService
             }
 
             var messageBodyJson = message.ToJson();
+
             var wrappingMessage = new WrappingMessage()
             {
                 ClassName = message.GetType().Name,

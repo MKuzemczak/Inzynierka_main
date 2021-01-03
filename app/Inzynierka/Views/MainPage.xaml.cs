@@ -102,7 +102,7 @@ namespace Inzynierka.Views
                     new List<string> { "D:/Dane/MichalKuzemczak/Projects/Inzynierka_main/data/yolo_files/16.png" }*/
                 });
 
-            var pythonSetupTimer = new System.Timers.Timer(3000);
+            var pythonSetupTimer = new System.Timers.Timer(10000);
             pythonSetupTimer.Elapsed += OnPythonSetupTimerElapsed;
             pythonSetupTimer.AutoReset = false;
             pythonSetupTimer.Enabled = true;

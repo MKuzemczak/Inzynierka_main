@@ -17,13 +17,13 @@
 
         
 
-        <Grid>
+        <Grid x:Name="navigationGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
-                <!--<ColumnDefinition Width="6*" />
-                <ColumnDefinition Width="*" />-->
+                <ColumnDefinition Width="6*" />
+                <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <Rectangle
+            <!--<Rectangle
                 Grid.Column="0"
                 Canvas.Left="10"
                 Canvas.Top="10"
@@ -32,9 +32,9 @@
                 <Rectangle.Fill>
                     <SolidColorBrush Color="Red" Opacity="0.75"/>
                 </Rectangle.Fill>
-            </Rectangle>
+            </Rectangle>-->
 
-            <!--<Rectangle
+            <Rectangle
                 Grid.Column="0"
                 Tapped="Previous_Tapped">
                 <Rectangle.Fill>
@@ -68,7 +68,10 @@
                     Source="/Assets/RightArrow.png"
                     HorizontalAlignment="Right"
                     Tapped="Next_Tapped" />
-            </Viewbox>-->
+            </Viewbox>
+        </Grid>
+        <Grid x:Name="innerGrid">
+            
         </Grid>
 
         <Button
@@ -79,6 +82,26 @@
             Padding="{StaticResource XSmallLeftTopRightBottomMargin}"
             Click="OnGoBack">
             <SymbolIcon Symbol="Back" />
+        </Button>
+
+        <Button
+            x:Name="tmpButton"
+            VerticalAlignment="Bottom"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="{StaticResource XSmallLeftTopRightBottomMargin}"
+            Click="tmpButton_Click"
+            Content="TMP">
+        </Button>
+        <Button
+            x:Name="clrButton"
+            VerticalAlignment="Bottom"
+            HorizontalAlignment="Center"
+            Background="Transparent"
+            BorderThickness="0"
+            Padding="{StaticResource XSmallLeftTopRightBottomMargin}"
+            Click="clrButton_Click"
+            Content="CLR">
         </Button>
     </Grid>
 
