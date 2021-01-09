@@ -6,7 +6,7 @@ from . import BaseRequest
 
 class ResultMessageStatus(Enum):
     Failed = 0
-    Success = 0
+    Success = 1
 
 class BaseResult(BaseRequest):
     @property
