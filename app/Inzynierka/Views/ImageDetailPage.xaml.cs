@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -17,6 +18,8 @@ using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Shapes;
+
+using Microsoft.Toolkit.Uwp.UI.Media;
 
 using Inzynierka.Models;
 using Inzynierka.Services;
@@ -169,16 +172,49 @@ namespace Inzynierka.Views
 
         private async void tmpButton_Click(object sender, RoutedEventArgs e)
         {
-            await xRayProcessor.FindBonesAsync(CurrentlyDisplayedImageItem, FindBonesRequestResultCallback);
+            await xRayProcessor.FindBonesAsync(CurrentlyDisplayedImageItem, FindBonesCallback);
         }
 
-        private void FindBonesRequestResultCallback(ImageItem requestedImageItem, List<ImageBoneSearchResults> results)
+        private void FindBonesCallback(ImageItem requestedImageItem, List<ImageBoneSearchResults> results)
         {
             if (requestedImageItem != CurrentlyDisplayedImageItem)
                 return;
 
+            innerGrid.Children.Clear();
+
+            if (results.Count == 0 || results[0].BoneSearchResults is null)
+                return;
+
             foreach (var result in results[0].BoneSearchResults)
             {
+                var fillColor = Color.FromArgb(50, 255, 255, 255);
+                var fillLight = new SolidColorBrush(Color.FromArgb(0, 255, 255, 255));
+                //var fillLight = new RadialGradientBrush()
+                //{
+                //    RadiusX = 1,
+                //    RadiusY = 1,
+                //    GradientStops = new GradientStopCollection()
+                //    {
+                //        new GradientStop() {Color = Color.FromArgb(50, 255, 0, 0), Offset = 0 },
+                //        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
+                //    },
+                //    AlphaMode = AlphaMode.Premultiplied
+                //};
+                var fillFocus = new RadialGradientBrush()
+                {
+                    RadiusX = 1,
+                    RadiusY = 1,
+                    GradientStops = new GradientStopCollection()
+                    {
+                        new GradientStop() {Color = fillColor, Offset = 0 },
+                        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
+                    },
+                    AlphaMode = AlphaMode.Premultiplied
+                };
+                var strokeLight = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+                var strokeFocus = new SolidColorBrush(Color.FromArgb(200, 255, 255, 250));
+
+                var grid = new Grid();
                 var rect = new Rectangle()
                 {
                     Translation = new System.Numerics.Vector3(
@@ -189,18 +225,52 @@ namespace Inzynierka.Views
                     Height = result.H * displayedImage.ActualHeight,
                     VerticalAlignment = VerticalAlignment.Center,
                     HorizontalAlignment = HorizontalAlignment.Center,
-                    Fill = new SolidColorBrush(Windows.UI.Color.FromArgb(10, 0, 255, 0)),
-                    Stroke = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 0, 255, 0))
+                    Fill = fillLight,
+                    //Stroke = strokeFocus,
+                    RadiusX = 20,
+                    RadiusY = 20
                 };
+
 
                 ToolTipService.SetToolTip(rect, new ToolTip()
                 {
                     Content = result.DetectedClassName
                 });
 
-                Grid.SetColumn(rect, 1);
+                Grid.SetColumn(grid, 1);
 
-                innerGrid.Children.Add(rect);
+                var text = new TextBlock()
+                {
+                    Text = result.DetectedClassName,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = strokeLight
+                };
+
+                text.Translation = rect.Translation/* + new System.Numerics.Vector3(0, ((float)rect.Height / 2) - (float)text.FontSize, 0)*/;
+
+                PointerEventHandler pointerEnteredHandler = (object sender, PointerRoutedEventArgs e) =>
+                {
+                    rect.Fill = fillFocus;
+                    //rect.Stroke = strokeFocus;
+                    text.Foreground = strokeFocus;
+                };
+                PointerEventHandler pointerExitedHandler = (object sender, PointerRoutedEventArgs e) =>
+                {
+                    rect.Fill = fillLight;
+                    //rect.Stroke = strokeLight;
+                    text.Foreground = strokeLight;
+                };
+
+                rect.PointerEntered += pointerEnteredHandler;
+                rect.PointerExited += pointerExitedHandler;
+                text.PointerEntered += pointerEnteredHandler;
+                text.PointerExited += pointerExitedHandler;
+
+                grid.Children.Add(rect);
+                grid.Children.Add(text);
+
+                innerGrid.Children.Add(grid);
             }
         }
 
