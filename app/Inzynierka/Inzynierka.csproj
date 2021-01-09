@@ -189,11 +189,13 @@
     <Compile Include="DatabaseAccess\DatabaseVirtualFolder.cs" />
     <Compile Include="CommunicationService\MessageReceivedEventArgs.cs" />
     <Compile Include="Exceptions\MessageTypeNotFoundException.cs" />
+    <Compile Include="Models\BoneData.cs" />
+    <Compile Include="Models\ImageBoneData.cs" />
     <Compile Include="Models\ModelsEventArgs\FolderItemRenamedEventArgs.cs" />
     <Compile Include="Exceptions\MainThreadDispatcherServiceNotInitializedException.cs" />
     <Compile Include="Services\ImageItemManager.cs" />
     <Compile Include="MainThreadDispatcher\MainThreadDispatcherService.cs" />
-    <Compile Include="Services\XRayProcessor.cs" />
+    <Compile Include="Services\ImageBoneDataManager.cs" />
     <Compile Include="Views\Exceptions\NoParentFolderSelectedExcpetion.cs" />
     <Compile Include="Helpers\DragAndDropHelper.cs" />
     <Compile Include="Helpers\Enums.cs" />

@@ -49,7 +49,7 @@ namespace Inzynierka.Views
         private List<ImageItem> ImageData { get; set; } = new List<ImageItem>();
         private CancellationTokenSource FlipCancellationTokenSource;
         private CancellationToken FlipCancellationToken;
-        private readonly XRayProcessor xRayProcessor = new XRayProcessor();
+        private readonly ImageBoneDataManager xRayProcessor = new ImageBoneDataManager();
 
         public ImageDetailPage()
         {
@@ -172,12 +172,17 @@ namespace Inzynierka.Views
 
         private async void tmpButton_Click(object sender, RoutedEventArgs e)
         {
-            await xRayProcessor.FindBonesAsync(CurrentlyDisplayedImageItem, FindBonesCallback);
+            await xRayProcessor.FindBonesAsync(new List<ImageItem>() { CurrentlyDisplayedImageItem }, FindBonesCallback);
         }
 
-        private void FindBonesCallback(ImageItem requestedImageItem, List<ImageBoneSearchResults> results)
+        private void clrButton_Click(object sender, RoutedEventArgs e)
         {
-            if (requestedImageItem != CurrentlyDisplayedImageItem)
+            innerGrid.Children.Clear();
+        }
+
+        private void FindBonesCallback(List<ImageItem> requestedImageItems, List<ImageBoneData> results)
+        {
+            if (requestedImageItems[0] != CurrentlyDisplayedImageItem)
                 return;
 
             innerGrid.Children.Clear();
@@ -187,96 +192,160 @@ namespace Inzynierka.Views
 
             foreach (var result in results[0].BoneSearchResults)
             {
-                var fillColor = Color.FromArgb(50, 255, 255, 255);
-                var fillLight = new SolidColorBrush(Color.FromArgb(0, 255, 255, 255));
-                //var fillLight = new RadialGradientBrush()
-                //{
-                //    RadiusX = 1,
-                //    RadiusY = 1,
-                //    GradientStops = new GradientStopCollection()
-                //    {
-                //        new GradientStop() {Color = Color.FromArgb(50, 255, 0, 0), Offset = 0 },
-                //        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
-                //    },
-                //    AlphaMode = AlphaMode.Premultiplied
-                //};
-                var fillFocus = new RadialGradientBrush()
-                {
-                    RadiusX = 1,
-                    RadiusY = 1,
-                    GradientStops = new GradientStopCollection()
-                    {
-                        new GradientStop() {Color = fillColor, Offset = 0 },
-                        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
-                    },
-                    AlphaMode = AlphaMode.Premultiplied
-                };
-                var strokeLight = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
-                var strokeFocus = new SolidColorBrush(Color.FromArgb(200, 255, 255, 250));
-
-                var grid = new Grid();
-                var rect = new Rectangle()
-                {
-                    Translation = new System.Numerics.Vector3(
-                        (float)((float)(result.X * displayedImage.ActualWidth) - (displayedImage.ActualWidth / 2)),
-                        (float)((float)(result.Y * displayedImage.ActualHeight) - (displayedImage.ActualHeight / 2)),
-                        0),
-                    Width = result.W * displayedImage.ActualWidth,
-                    Height = result.H * displayedImage.ActualHeight,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Fill = fillLight,
-                    //Stroke = strokeFocus,
-                    RadiusX = 20,
-                    RadiusY = 20
-                };
-
-
-                ToolTipService.SetToolTip(rect, new ToolTip()
-                {
-                    Content = result.DetectedClassName
-                });
-
-                Grid.SetColumn(grid, 1);
-
-                var text = new TextBlock()
-                {
-                    Text = result.DetectedClassName,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Foreground = strokeLight
-                };
-
-                text.Translation = rect.Translation/* + new System.Numerics.Vector3(0, ((float)rect.Height / 2) - (float)text.FontSize, 0)*/;
-
-                PointerEventHandler pointerEnteredHandler = (object sender, PointerRoutedEventArgs e) =>
-                {
-                    rect.Fill = fillFocus;
-                    //rect.Stroke = strokeFocus;
-                    text.Foreground = strokeFocus;
-                };
-                PointerEventHandler pointerExitedHandler = (object sender, PointerRoutedEventArgs e) =>
-                {
-                    rect.Fill = fillLight;
-                    //rect.Stroke = strokeLight;
-                    text.Foreground = strokeLight;
-                };
-
-                rect.PointerEntered += pointerEnteredHandler;
-                rect.PointerExited += pointerExitedHandler;
-                text.PointerEntered += pointerEnteredHandler;
-                text.PointerExited += pointerExitedHandler;
-
-                grid.Children.Add(rect);
-                grid.Children.Add(text);
+                var grid = PrepareBoneHighlightRect(
+                    requestedImageItems[0],
+                    results[0],
+                    result,
+                    (float)((float)(result.X * displayedImage.ActualWidth) - (displayedImage.ActualWidth / 2)),
+                    (float)((float)(result.Y * displayedImage.ActualHeight) - (displayedImage.ActualHeight / 2)),
+                    (float)(result.W * displayedImage.ActualWidth),
+                    (float)(result.H * displayedImage.ActualHeight),
+                    result.DetectedClassName);
 
                 innerGrid.Children.Add(grid);
             }
         }
 
-        private void clrButton_Click(object sender, RoutedEventArgs e)
+        private Grid PrepareBoneHighlightRect(
+            ImageItem imageItem,
+            ImageBoneData imageBoneData,
+            BoneData singleBoneData,
+            float centerX,
+            float centerY,
+            float width,
+            float height,
+            string displayedText)
         {
-            innerGrid.Children.Clear();
+            var fillColor = Color.FromArgb(50, 255, 255, 255);
+            var fillLight = new SolidColorBrush(Color.FromArgb(0, 255, 255, 255));
+            //var fillLight = new RadialGradientBrush()
+            //{
+            //    RadiusX = 1,
+            //    RadiusY = 1,
+            //    GradientStops = new GradientStopCollection()
+            //    {
+            //        new GradientStop() {Color = Color.FromArgb(50, 255, 0, 0), Offset = 0 },
+            //        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
+            //    },
+            //    AlphaMode = AlphaMode.Premultiplied
+            //};
+            var fillFocus = new RadialGradientBrush()
+            {
+                RadiusX = 1,
+                RadiusY = 1,
+                GradientStops = new GradientStopCollection()
+                    {
+                        new GradientStop() {Color = fillColor, Offset = 0 },
+                        new GradientStop() {Color = Color.FromArgb(0, 255, 0, 0), Offset = 0.5 }
+                    },
+                AlphaMode = AlphaMode.Premultiplied
+            };
+            var strokeLight = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255));
+            var strokeFocus = new SolidColorBrush(Color.FromArgb(200, 255, 255, 250));
+
+            var grid = new Grid();
+            var rect = new Rectangle()
+            {
+                Translation = new System.Numerics.Vector3(centerX, centerY, 0),
+                Width = width,
+                Height = height,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Fill = fillLight,
+                //Stroke = strokeFocus,
+                RadiusX = 20,
+                RadiusY = 20
+            };
+
+
+            ToolTipService.SetToolTip(rect, new ToolTip()
+            {
+                Content = displayedText
+            });
+
+            Grid.SetColumn(grid, 1);
+
+            var text = new TextBlock()
+            {
+                Text = displayedText,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Foreground = strokeLight
+            };
+
+            text.Translation = rect.Translation/* + new System.Numerics.Vector3(0, ((float)rect.Height / 2) - (float)text.FontSize, 0)*/;
+
+            PointerEventHandler rectFocus = (object sender, PointerRoutedEventArgs e) =>
+            {
+                rect.Fill = fillFocus;
+                //rect.Stroke = strokeFocus;
+                text.Foreground = strokeFocus;
+            };
+            PointerEventHandler rectUnfocus = (object sender, PointerRoutedEventArgs e) =>
+            {
+                rect.Fill = fillLight;
+                //rect.Stroke = strokeLight;
+                text.Foreground = strokeLight;
+            };
+
+            rect.PointerEntered += rectFocus;
+            rect.PointerExited += rectUnfocus;
+            text.PointerEntered += rectFocus;
+            text.PointerExited += rectUnfocus;
+
+            var flyout = new Flyout();
+            var flyoutGrid = new StackPanel() { Spacing = 10 };
+            var flyoutTextBox = new TextBox()
+            {
+                Text = singleBoneData.Comment ?? "",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                Width = 300
+            };
+            var flyoutButton = new Button()
+            {
+                Content = "Save",
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Visibility = Visibility.Collapsed
+            };
+
+            flyoutTextBox.TextChanged += (object o, TextChangedEventArgs ea) => { flyoutButton.Visibility = Visibility.Visible; };
+            flyoutButton.Click += async (object sender, RoutedEventArgs ea) =>
+            {
+                singleBoneData.Comment = flyoutTextBox.Text;
+                await xRayProcessor.SaveBoneDataAsync(imageItem, imageBoneData);
+                flyoutButton.Visibility = Visibility.Collapsed;
+            };
+
+            flyoutGrid.Children.Add(new TextBlock()
+            {
+                Text = "Comment",
+                Height = flyoutButton.Height,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            });
+            flyoutGrid.Children.Add(flyoutTextBox);
+            flyoutGrid.Children.Add(flyoutButton);
+            flyout.Content = flyoutGrid;
+            rect.ContextFlyout = flyout;
+
+            TappedEventHandler tappedHandler = (object o, TappedRoutedEventArgs a) =>
+            {
+                rect.ContextFlyout.ShowAt(rect);
+                rectFocus(null, null);
+            };
+            rect.Tapped += tappedHandler;
+            text.Tapped += tappedHandler;
+
+            grid.Children.Add(rect);
+            grid.Children.Add(text);
+
+            return grid;
+        }
+
+        private void FlyoutButton_Click(object sender, RoutedEventArgs e)
+        {
+            throw new NotImplementedException();
         }
     }
 }

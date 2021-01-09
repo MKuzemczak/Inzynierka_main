@@ -151,7 +151,7 @@ namespace Inzynierka.Views
             RabbitMQCommunicationService.Instance.Send(new CommunicationService.Messages.ExitIndication()
             {
                 Sender = RabbitMQCommunicationService.IncomingQueueName,
-                Receiver = RabbitMQCommunicationService.LauncherQueueName
+                Receiver = RabbitMQCommunicationService.PythonQueueName
             });
         }
 
