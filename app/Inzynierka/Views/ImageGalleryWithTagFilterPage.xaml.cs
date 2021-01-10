@@ -99,7 +99,8 @@ namespace Inzynierka.Views
             List<string> tagsToHighlight = new List<string>();
             images.ForEach(i =>
             {
-                tagsToHighlight.AddRange(i.Tags);
+                if (i is object)
+                    tagsToHighlight.AddRange(i.Tags);
             });
             tagFilterPage.HighlightTags(tagsToHighlight);
         }

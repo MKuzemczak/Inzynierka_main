@@ -275,11 +275,20 @@ namespace Inzynierka.Models
             var props = await File.Properties.GetImagePropertiesAsync();
             foreach (var item in tags)
             {
+                if (Tags.Contains(item))
+                    continue;
                 props.Keywords.Add(item);
                 await DatabaseAccessService.InsertImageTagAsync(DatabaseId.ToString(), item);
                 Tags.Add(item);
             }
-            await props.SavePropertiesAsync();
+            try
+            {
+                await props.SavePropertiesAsync();
+            }
+            catch (ArgumentException)
+            {
+                
+            }
         }
 
         public async Task DeleteTagAsync(string tag)

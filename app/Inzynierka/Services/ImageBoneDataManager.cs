@@ -46,6 +46,8 @@ namespace Inzynierka.Services
             if (boneDataFile is null)
                 boneDataFile = await CreateBoneDataFileAsync(imageItem);
 
+            await imageItem.AddTagsAsync(data.BoneSearchResults.Select(i => i.DetectedClassName).ToList());
+
             await FileIO.WriteTextAsync(boneDataFile, JsonSerializer.Serialize(data));
         }
 
