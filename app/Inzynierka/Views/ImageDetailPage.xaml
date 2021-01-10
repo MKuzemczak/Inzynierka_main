@@ -12,10 +12,16 @@
         <Image
             x:Name="displayedImage"
             Stretch="Uniform"
-            Source="{x:Bind CurrentlyDisplayedImageItem.ImageData, Mode=OneWay}">
+            Source="{x:Bind CurrentlyDisplayedImageItem.ImageData, Mode=OneWay}"
+            DragStarting="displayedImage_DragStarting"
+            DragOver="displayedImage_DragOver"
+            Drop="displayedImage_Drop"
+            CanDrag="True"
+            AllowDrop="True"
+            PointerPressed="displayedImage_PointerPressed">
         </Image>
 
-        
+
 
         <Grid x:Name="navigationGrid">
             <Grid.ColumnDefinitions>
@@ -70,7 +76,9 @@
                     Tapped="Next_Tapped" />
             </Viewbox>
         </Grid>
-        <Grid x:Name="innerGrid">
+        <Grid x:Name="innerGrid"
+              VerticalAlignment="Center"
+              HorizontalAlignment="Center">
             
         </Grid>
 

@@ -1,0 +1,38 @@
+﻿<UserControl
+    x:Class="Inzynierka.Controls.BoneHighlightRectangle"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Inzynierka.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:media="using:Microsoft.Toolkit.Uwp.UI.Media"
+    mc:Ignorable="d"
+    d:DesignHeight="300"
+    d:DesignWidth="400">
+
+    <Grid>
+        <Rectangle x:Name="rect"
+                   CanDrag="{x:Bind CanDrag}"
+                   AllowDrop="{x:Bind AllowDrop}"
+                   DragStarting="{x:Bind DragStartingHandler}"
+                   DragOver="{x:Bind DragOverHandler}"
+                   PointerEntered="PointerEntered"
+                   PointerExited="PointerExited">
+            <Rectangle.Fill>
+                <media:RadialGradientBrush RadiusX="1"
+                                           RadiusY="1"
+                                           AlphaMode="Premultiplied">
+                    <GradientStop Color="{x:Bind RectangleFillColor.Color}" Offset="0" />
+                    <GradientStop Color="Transparent" Offset="0.5" />
+                </media:RadialGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+        <TextBlock x:Name="diplayedTextBlock"
+                   Text="{x:Bind DisplayedText}"
+                   Foreground="{x:Bind ForegroundColor}"
+                   CanDrag="{x:Bind CanDrag}"
+                   AllowDrop="{x:Bind AllowDrop}"
+                   PointerEntered="PointerEntered"
+                   PointerExited="PointerExited"/>
+    </Grid>
+</UserControl>

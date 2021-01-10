@@ -21,6 +21,7 @@ using Windows.UI.Xaml.Shapes;
 
 using Microsoft.Toolkit.Uwp.UI.Media;
 
+using Inzynierka.Controls;
 using Inzynierka.Models;
 using Inzynierka.Services;
 using Inzynierka.Helpers;
@@ -51,9 +52,15 @@ namespace Inzynierka.Views
         private CancellationToken FlipCancellationToken;
         private readonly ImageBoneDataManager xRayProcessor = new ImageBoneDataManager();
 
+        private Point rectangleDrawStartingPoint { get; set; } = new Point();
+        private Rectangle drawnRectangle { get; set; }
+        private ImageBoneData CurrentImageBoneData { get; set; }
+
+
         public ImageDetailPage()
         {
             this.InitializeComponent();
+            PrepareDrawnRect();
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -180,15 +187,104 @@ namespace Inzynierka.Views
             innerGrid.Children.Clear();
         }
 
+        private void PrepareDrawnRect()
+        {
+            drawnRectangle = new Rectangle()
+            {
+                Fill = new SolidColorBrush(Color.FromArgb(50, 0, 0, 255)),
+                Stroke = new SolidColorBrush(Color.FromArgb(255, 0, 0, 150)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                AllowDrop = true
+            };
+
+            var drawnRectFlyout = new Flyout();
+            var verticalStack = new StackPanel() { Spacing = 10};
+            var boneNameTextBox = new TextBox() { Width = 300 };
+            var commentTextBox = new TextBox()
+            {
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                Width = 300
+            };
+            var button = new Button() { Content = "Save", Visibility = Visibility.Collapsed };
+
+            verticalStack.Children.Add(new TextBlock() { Text = "Bone name" });
+            verticalStack.Children.Add(boneNameTextBox);
+            verticalStack.Children.Add(new TextBlock() { Text = "Comment", Margin = new Thickness(0, 10, 0, 0) });
+            verticalStack.Children.Add(commentTextBox);
+            verticalStack.Children.Add(button);
+            drawnRectFlyout.Content = verticalStack;
+            drawnRectangle.ContextFlyout = drawnRectFlyout;
+
+            TextChangedEventHandler textChangedHandler = (object o, TextChangedEventArgs ea) =>
+            {
+                if (boneNameTextBox.Text == "")
+                {
+                    button.Visibility = Visibility.Collapsed;
+                    return;
+                }
+                button.Visibility = Visibility.Visible;
+            };
+            boneNameTextBox.TextChanged += textChangedHandler;
+            commentTextBox.TextChanged += textChangedHandler;
+            button.Click += async (object o, RoutedEventArgs ea) =>
+            {
+                if (CurrentImageBoneData is null)
+                {
+                    StateMessagingService.Instance.SendInfoMessage("Try finding bones first!", 5000);
+                    return;
+                }
+
+                var boneData = new BoneData()
+                {
+                    X = (float)((drawnRectangle.Translation.X + displayedImage.ActualWidth / 2) / displayedImage.ActualWidth),
+                    Y = (float)((drawnRectangle.Translation.Y + displayedImage.ActualHeight / 2) / displayedImage.ActualHeight),
+                    W = (float)(drawnRectangle.ActualWidth / displayedImage.ActualWidth),
+                    H = (float)(drawnRectangle.ActualHeight / displayedImage.ActualHeight),
+                    Confidence = 1,
+                    DetectedClassName = boneNameTextBox.Text,
+                    Comment = commentTextBox.Text
+                };
+                CurrentImageBoneData.BoneSearchResults.Add(boneData);
+                await xRayProcessor.SaveBoneDataAsync(CurrentlyDisplayedImageItem, CurrentImageBoneData);
+
+                var grid = PrepareBoneHighlightRect(
+                    CurrentlyDisplayedImageItem,
+                    CurrentImageBoneData,
+                    boneData,
+                    drawnRectangle.Translation.X,
+                    drawnRectangle.Translation.Y,
+                    (float)drawnRectangle.ActualWidth,
+                    (float)drawnRectangle.ActualHeight,
+                    boneData.DetectedClassName); ;
+
+                innerGrid.Children.Add(grid);
+            };
+            drawnRectFlyout.Closed += (object s, object e) =>
+            {
+                drawnRectangle.Width = 0;
+                boneNameTextBox.Text = "";
+                commentTextBox.Text = "";
+            };
+            drawnRectangle.DragOver += displayedImage_DragOver;
+            drawnRectangle.Drop += displayedImage_Drop;
+
+            innerGrid.Children.Add(drawnRectangle);
+        }
+
         private void FindBonesCallback(List<ImageItem> requestedImageItems, List<ImageBoneData> results)
         {
             if (requestedImageItems[0] != CurrentlyDisplayedImageItem)
                 return;
 
             innerGrid.Children.Clear();
+            innerGrid.Children.Add(drawnRectangle);
 
             if (results.Count == 0 || results[0].BoneSearchResults is null)
                 return;
+
+            CurrentImageBoneData = results[0];
 
             foreach (var result in results[0].BoneSearchResults)
             {
@@ -254,7 +350,9 @@ namespace Inzynierka.Views
                 Fill = fillLight,
                 //Stroke = strokeFocus,
                 RadiusX = 20,
-                RadiusY = 20
+                RadiusY = 20,
+                CanDrag = true,
+                AllowDrop = true
             };
 
 
@@ -265,33 +363,35 @@ namespace Inzynierka.Views
 
             Grid.SetColumn(grid, 1);
 
-            var text = new TextBlock()
+            var boneClassNameTextBlock = new TextBlock()
             {
                 Text = displayedText,
                 VerticalAlignment = VerticalAlignment.Center,
                 HorizontalAlignment = HorizontalAlignment.Center,
-                Foreground = strokeLight
+                Foreground = strokeLight,
+                CanDrag = true,
+                AllowDrop = true
             };
 
-            text.Translation = rect.Translation/* + new System.Numerics.Vector3(0, ((float)rect.Height / 2) - (float)text.FontSize, 0)*/;
+            boneClassNameTextBlock.Translation = rect.Translation/* + new System.Numerics.Vector3(0, ((float)rect.Height / 2) - (float)text.FontSize, 0)*/;
 
             PointerEventHandler rectFocus = (object sender, PointerRoutedEventArgs e) =>
             {
                 rect.Fill = fillFocus;
                 //rect.Stroke = strokeFocus;
-                text.Foreground = strokeFocus;
+                boneClassNameTextBlock.Foreground = strokeFocus;
             };
             PointerEventHandler rectUnfocus = (object sender, PointerRoutedEventArgs e) =>
             {
                 rect.Fill = fillLight;
                 //rect.Stroke = strokeLight;
-                text.Foreground = strokeLight;
+                boneClassNameTextBlock.Foreground = strokeLight;
             };
 
             rect.PointerEntered += rectFocus;
             rect.PointerExited += rectUnfocus;
-            text.PointerEntered += rectFocus;
-            text.PointerExited += rectUnfocus;
+            boneClassNameTextBlock.PointerEntered += rectFocus;
+            boneClassNameTextBlock.PointerExited += rectUnfocus;
 
             var flyout = new Flyout();
             var flyoutGrid = new StackPanel() { Spacing = 10 };
@@ -322,6 +422,7 @@ namespace Inzynierka.Views
                 Text = "Comment",
                 Height = flyoutButton.Height,
                 VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
                 TextAlignment = TextAlignment.Center
             });
             flyoutGrid.Children.Add(flyoutTextBox);
@@ -335,17 +436,55 @@ namespace Inzynierka.Views
                 rectFocus(null, null);
             };
             rect.Tapped += tappedHandler;
-            text.Tapped += tappedHandler;
+            boneClassNameTextBlock.Tapped += tappedHandler;
 
             grid.Children.Add(rect);
-            grid.Children.Add(text);
+            grid.Children.Add(boneClassNameTextBlock);
+
+            rect.DragStarting += displayedImage_DragStarting;
+            rect.DragOver += displayedImage_DragOver;
+            rect.PointerPressed += displayedImage_PointerPressed;
+            rect.Drop += displayedImage_Drop;
+            boneClassNameTextBlock.DragStarting += displayedImage_DragStarting;
+            boneClassNameTextBlock.DragOver += displayedImage_DragOver;
+            boneClassNameTextBlock.PointerPressed += displayedImage_PointerPressed;
+            boneClassNameTextBlock.Drop += displayedImage_Drop;
 
             return grid;
         }
 
-        private void FlyoutButton_Click(object sender, RoutedEventArgs e)
+        private void displayedImage_DragOver(object sender, DragEventArgs e)
         {
-            throw new NotImplementedException();
+            e.AcceptedOperation = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+            e.DragUIOverride.IsCaptionVisible = false;
+            e.DragUIOverride.IsContentVisible = false;
+            e.DragUIOverride.IsGlyphVisible = false;
+
+            var point = e.GetPosition(displayedImage);
+
+            drawnRectangle.Width = Math.Abs(point.X - rectangleDrawStartingPoint.X);
+            drawnRectangle.Height = Math.Abs(point.Y - rectangleDrawStartingPoint.Y);
+            drawnRectangle.Translation = new System.Numerics.Vector3(
+                (float)((point.X - rectangleDrawStartingPoint.X) / 2 + rectangleDrawStartingPoint.X - displayedImage.ActualWidth / 2),
+                (float)((point.Y - rectangleDrawStartingPoint.Y) / 2 + rectangleDrawStartingPoint.Y - displayedImage.ActualHeight / 2),
+                0);
+        }
+
+        private void displayedImage_DragStarting(UIElement sender, DragStartingEventArgs args)
+        {
+            args.AllowedOperations = Windows.ApplicationModel.DataTransfer.DataPackageOperation.Move;
+        }
+
+        private void displayedImage_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            var intermediate = e.GetIntermediatePoints(displayedImage);
+            var pointerPoint = intermediate.Count == 0 ? e.GetCurrentPoint(displayedImage) : intermediate[0];
+            rectangleDrawStartingPoint = pointerPoint.Position;
+        }
+
+        private void displayedImage_Drop(object sender, DragEventArgs e)
+        {
+            drawnRectangle.ContextFlyout.ShowAt(drawnRectangle);
         }
     }
 }

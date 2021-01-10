@@ -122,19 +122,21 @@ namespace Inzynierka.Services
             await MainThreadDispatcherService.MarshalAsyncMethodToMainThreadAsync(async () =>
             {
                 var msg = message as FindBonesRequestResult;
+                var imgItems = requestIdToRequestData[msg.MessageId].ImageItems;
+                var requestDataResults = requestIdToRequestData[msg.MessageId].Results;
+                var callback = requestIdToRequestData[msg.MessageId].Callback;
+                var messageResults = msg.Contents;
 
                 if (msg.Status == ResultStatus.Failed)
                 {
                     StateMessagingService.Instance.SendInfoMessage("Bone search failed", 2000);
+                    callback(imgItems, requestDataResults);
                     return;
                 }
 
                 StateMessagingService.Instance.SendInfoMessage("Bone search done", 2000);
 
-                var imgItems = requestIdToRequestData[msg.MessageId].ImageItems;
-                var requestDataResults = requestIdToRequestData[msg.MessageId].Results;
-                var callback = requestIdToRequestData[msg.MessageId].Callback;
-                var messageResults = msg.Contents;
+                
 
                 foreach (var result in messageResults)
                 {

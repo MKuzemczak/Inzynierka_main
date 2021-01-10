@@ -168,6 +168,9 @@
     <Compile Include="CommunicationService\Messages\AppSetupFinishedIndication.cs" />
     <Compile Include="CommunicationService\Messages\PythonSetupFinishedIndication.cs" />
     <Compile Include="CommunicationService\WrappingMessage.cs" />
+    <Compile Include="Controls\BoneHighlightRectangle.xaml.cs">
+      <DependentUpon>BoneHighlightRectangle.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\EditableTextBlock.xaml.cs">
       <DependentUpon>EditableTextBlock.xaml</DependentUpon>
     </Compile>
@@ -272,6 +275,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Controls\BoneHighlightRectangle.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\EditableTextBlock.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
